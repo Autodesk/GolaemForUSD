@@ -3793,13 +3793,17 @@ namespace glm
                             break;
                         }
                     }
-                    if (!materialName.empty())
+
+                    if (materialAssignMode != GolaemMaterialAssignMode::NO_ASSIGNMENT)
                     {
-                        meshTemplateData.materialPath = SdfPathListOp::CreateExplicit({SdfPath(materialName.c_str())});
-                    }
-                    else
-                    {
-                        meshTemplateData.materialPath = (*_skinMeshRelationships)[_skinMeshRelationshipTokens->materialBinding].defaultTargetPath;
+                        if (!materialName.empty())
+                        {
+                            meshTemplateData.materialPath = SdfPathListOp::CreateExplicit({SdfPath(materialName.c_str())});
+                        }
+                        else
+                        {
+                            meshTemplateData.materialPath = (*_skinMeshRelationships)[_skinMeshRelationshipTokens->materialBinding].defaultTargetPath;
+                        }
                     }
                 }
             }

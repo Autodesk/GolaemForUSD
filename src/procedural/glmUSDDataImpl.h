@@ -34,6 +34,7 @@ namespace glm
             {
                 BY_SURFACE_SHADER,
                 BY_SHADING_GROUP,
+                NO_ASSIGNMENT,
                 END
             };
         };
