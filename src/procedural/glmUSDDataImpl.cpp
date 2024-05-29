@@ -58,12 +58,14 @@ namespace glm
             ((displayColor, "primvars:displayColor"))
             ((visibility, "visibility"))
             ((entityId, "entityId"))
+            ((extentsHint, "extentsHint"))
         );
 
         TF_DEFINE_PRIVATE_TOKENS(
             _skelEntityPropertyTokens,
             ((visibility, "visibility"))
             ((entityId, "entityId"))
+            ((extentsHint, "extentsHint"))
         );
 
         TF_DEFINE_PRIVATE_TOKENS(
@@ -152,6 +154,9 @@ namespace glm
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->displayColor].defaultValue = VtValue(VtVec3fArray({GfVec3f(1, 0.5, 0)}));
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->displayColor].isAnimated = false;
 
+            (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->extentsHint].defaultValue = VtValue(VtVec3fArray({GfVec3f(-0.5, -0.5, -0.5), GfVec3f(0.5, 0.5, 0.5)}));
+            (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->extentsHint].isAnimated = false;
+
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->visibility].defaultValue = VtValue(UsdGeomTokens->inherited);
 
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->entityId].defaultValue = VtValue(int64_t(-1));
@@ -176,6 +181,9 @@ namespace glm
 
             (*_skelEntityProperties)[_skelEntityPropertyTokens->entityId].defaultValue = VtValue(int64_t(-1));
             (*_skelEntityProperties)[_skelEntityPropertyTokens->entityId].isAnimated = false;
+
+            (*_skelEntityProperties)[_skelEntityPropertyTokens->extentsHint].defaultValue = VtValue(VtVec3fArray({GfVec3f(-0.5, -0.5, -0.5), GfVec3f(0.5, 0.5, 0.5)}));
+            (*_skelEntityProperties)[_skelEntityPropertyTokens->extentsHint].isAnimated = false;
 
             // Use the schema to derive the type name tokens from each property's
             // default value.
@@ -1785,40 +1793,40 @@ namespace glm
                 }
 
                 // face 0
-                templateData.faceVertexIndices.push_back(0);
-                templateData.faceVertexIndices.push_back(1);
-                templateData.faceVertexIndices.push_back(2);
                 templateData.faceVertexIndices.push_back(3);
+                templateData.faceVertexIndices.push_back(2);
+                templateData.faceVertexIndices.push_back(1);
+                templateData.faceVertexIndices.push_back(0);
 
                 // face 1
-                templateData.faceVertexIndices.push_back(1);
-                templateData.faceVertexIndices.push_back(5);
-                templateData.faceVertexIndices.push_back(6);
                 templateData.faceVertexIndices.push_back(2);
+                templateData.faceVertexIndices.push_back(6);
+                templateData.faceVertexIndices.push_back(5);
+                templateData.faceVertexIndices.push_back(1);
 
                 // face 2
-                templateData.faceVertexIndices.push_back(2);
-                templateData.faceVertexIndices.push_back(6);
-                templateData.faceVertexIndices.push_back(7);
                 templateData.faceVertexIndices.push_back(3);
+                templateData.faceVertexIndices.push_back(7);
+                templateData.faceVertexIndices.push_back(6);
+                templateData.faceVertexIndices.push_back(2);
 
                 // face 3
-                templateData.faceVertexIndices.push_back(3);
-                templateData.faceVertexIndices.push_back(7);
-                templateData.faceVertexIndices.push_back(4);
                 templateData.faceVertexIndices.push_back(0);
+                templateData.faceVertexIndices.push_back(4);
+                templateData.faceVertexIndices.push_back(7);
+                templateData.faceVertexIndices.push_back(3);
 
                 // face 4
-                templateData.faceVertexIndices.push_back(0);
-                templateData.faceVertexIndices.push_back(4);
-                templateData.faceVertexIndices.push_back(5);
                 templateData.faceVertexIndices.push_back(1);
+                templateData.faceVertexIndices.push_back(5);
+                templateData.faceVertexIndices.push_back(4);
+                templateData.faceVertexIndices.push_back(0);
 
                 // face 5
-                templateData.faceVertexIndices.push_back(4);
-                templateData.faceVertexIndices.push_back(7);
-                templateData.faceVertexIndices.push_back(6);
                 templateData.faceVertexIndices.push_back(5);
+                templateData.faceVertexIndices.push_back(6);
+                templateData.faceVertexIndices.push_back(7);
+                templateData.faceVertexIndices.push_back(4);
             }
 
             TfToken skelAnimName("SkelAnim");
