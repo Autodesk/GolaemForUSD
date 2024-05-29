@@ -19,10 +19,6 @@ USD_INCLUDES_START
 #include <pxr/pxr.h>
 USD_INCLUDES_END
 
-#ifndef GLM_GEO_ENGINE_VERSION
-#define GLM_GEO_ENGINE_VERSION 1
-#endif
-
 namespace glm
 {
     namespace usdplugin
@@ -44,16 +40,15 @@ namespace glm
 
                 glm::Singleton<USDLogger>::create();
 
-                glm::crowdio::ProductDetails productDetails;
+                glm::crowdio::ProductDetails productDetails = GLM_SETUP_PRODUCT_DETAILS;
                 productDetails._fullVersion = glm::crowdio::getGolaemVersion();
                 productDetails._containerApplicationName = "USD";
                 productDetails._containerApplicationVersion = glm::toString(PXR_MAJOR_VERSION) + "." + glm::toString(PXR_MINOR_VERSION);
                 productDetails._notificationHandler = NULL; // todo: install viewport notification
-                productDetails._geoVersionId = GLM_GEO_ENGINE_VERSION;
 
                 bool allowCreatePLE = false;
                 bool deferLicenseCheck = false; // check for licenses at crowdio::init
-                glm::crowdio::setupGolaemProduct("GolaemForUsd", ".", productDetails, deferLicenseCheck, allowCreatePLE);
+                glm::crowdio::setupGolaemProduct(".", productDetails, deferLicenseCheck, allowCreatePLE);
 
                 glm::crowdio::init();
             }
