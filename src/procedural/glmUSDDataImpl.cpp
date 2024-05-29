@@ -2045,8 +2045,6 @@ namespace glm
                         GLM_CROWD_TRACE_WARNING_LIMIT("The entity '" << entityId << "', character '" << character->_name << "' has an invalid rendering type: '" << renderingTypeIdx << "'. Using default rendering type.");
                     }
 
-                    _getCharacterExtent(skinMeshEntityData, entityData->extent);
-
                     entityData->inputGeoData._assets = &entityAssets[entityData->inputGeoData._entityIndex];
 
                     uint16_t entityType = simuData->_entityTypes[entityData->inputGeoData._entityIndex];
@@ -2231,6 +2229,8 @@ namespace glm
                             }
                         }
                     }
+
+                    _getCharacterExtent(entityData, entityData->extent);
                 }
             }
 
@@ -3431,7 +3431,7 @@ namespace glm
         }
 
         //-----------------------------------------------------------------------------
-        void GolaemUSD_DataImpl::_getCharacterExtent(const SkinMeshEntityData* entityData, GfVec3f& extent) const
+        void GolaemUSD_DataImpl::_getCharacterExtent(const EntityData* entityData, GfVec3f& extent) const
         {
             glm::Vector3 halfExtents(1, 1, 1);
             size_t geoIdx = 0;

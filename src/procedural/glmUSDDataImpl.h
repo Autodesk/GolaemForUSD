@@ -281,7 +281,7 @@ namespace glm
             void _DoComputeSkinMeshEntity(SkinMeshEntityData* entityData);
             void _ComputeEntity(EntityData* entityData);
             void _InvalidateEntity(EntityData* entityData);
-            void _getCharacterExtent(const SkinMeshEntityData* entityData, GfVec3f& extent) const;
+            void _getCharacterExtent(const EntityData* entityData, GfVec3f& extent) const;
             void _ComputeBboxData(SkinMeshEntityData* entityData);
             void _ComputeSkinMeshTemplateData(
                 glm::Array<std::map<std::pair<int, int>, SkinMeshTemplateData>>& characterTemplateData,
