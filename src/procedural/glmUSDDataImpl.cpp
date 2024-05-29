@@ -654,6 +654,19 @@ namespace glm
                     }
                 }
 
+                if (field == SdfFieldKeys->Kind)
+                {
+                    if (TfMapLookupPtr(_primChildNames, path) != NULL && TfMapLookupPtr(_skinMeshEntityDataMap, path) == NULL)
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(TfToken("group"));
+                    }
+
+                    else if (TfMapLookupPtr(_skinMeshEntityDataMap, path) != NULL)
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(TfToken("component"));
+                    }
+                }
+
                 if (field == SdfFieldKeys->Active)
                 {
                     SdfPath primPath = path.GetAbsoluteRootOrPrimPath();
@@ -1848,8 +1861,8 @@ namespace glm
                 }
 
                 TfToken cfName(TfMakeValidIdentifier(glmCfName.c_str()));
-
                 SdfPath cfPath = _GetRootPrimPath().AppendChild(cfName);
+
                 _primSpecPaths.insert(cfPath);
                 rootChildNames.push_back(cfName);
                 std::vector<TfToken>& cfChildNames = _primChildNames[cfPath];
