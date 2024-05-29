@@ -70,6 +70,8 @@ namespace glm
 
                 GfVec3f pos{0, 0, 0};
 
+                GfVec3f extent{0, 0, 0};
+
                 ~EntityData();
                 void initEntityLock();
             };
@@ -279,6 +281,7 @@ namespace glm
             void _DoComputeSkinMeshEntity(SkinMeshEntityData* entityData);
             void _ComputeEntity(EntityData* entityData);
             void _InvalidateEntity(EntityData* entityData);
+            void _getCharacterExtent(const SkinMeshEntityData* entityData, GfVec3f& extent) const;
             void _ComputeBboxData(SkinMeshEntityData* entityData);
             void _ComputeSkinMeshTemplateData(
                 glm::Array<std::map<std::pair<int, int>, SkinMeshTemplateData>>& characterTemplateData,

@@ -2045,6 +2045,8 @@ namespace glm
                         GLM_CROWD_TRACE_WARNING_LIMIT("The entity '" << entityId << "', character '" << character->_name << "' has an invalid rendering type: '" << renderingTypeIdx << "'. Using default rendering type.");
                     }
 
+                    _getCharacterExtent(skinMeshEntityData, entityData->extent);
+
                     entityData->inputGeoData._assets = &entityAssets[entityData->inputGeoData._entityIndex];
 
                     uint16_t entityType = simuData->_entityTypes[entityData->inputGeoData._entityIndex];
@@ -2493,6 +2495,10 @@ namespace glm
                             else if (nameToken == _skinMeshEntityPropertyTokens->entityId)
                             {
                                 *value = VtValue(entityData->inputGeoData._entityId);
+                            }
+                            else if (nameToken == _skinMeshEntityPropertyTokens->extentsHint)
+                            {
+                                *value = VtValue(VtVec3fArray({entityData->extent * -1.f, entityData->extent}));
                             }
                             else
                             {
@@ -3425,6 +3431,21 @@ namespace glm
         }
 
         //-----------------------------------------------------------------------------
+        void GolaemUSD_DataImpl::_getCharacterExtent(const SkinMeshEntityData* entityData, GfVec3f& extent) const
+        {
+            glm::Vector3 halfExtents(1, 1, 1);
+            size_t geoIdx = 0;
+            const glm::GeometryAsset* geoAsset = entityData->inputGeoData._character->getGeometryAsset(entityData->inputGeoData._geometryTag, geoIdx); // any LOD should have same extents !
+            if (geoAsset != NULL)
+            {
+                halfExtents = geoAsset->_halfExtentsYUp;
+            }
+            float characterScale = entityData->inputGeoData._simuData->_scales[entityData->inputGeoData._entityIndex];
+            halfExtents *= characterScale;
+            extent.Set(halfExtents[0], halfExtents[1], halfExtents[2]);
+        }
+
+        //-----------------------------------------------------------------------------
         void GolaemUSD_DataImpl::_ComputeBboxData(SkinMeshEntityData* entityData)
         {
             glm::GlmString meshName = "BBOX";
@@ -3439,15 +3460,8 @@ namespace glm
             meshData.templateData = &_skinMeshTemplateDataPerCharPerLod[0][0][{0, 0}];
 
             // compute the bounding box of the current entity
-            glm::Vector3 halfExtents(1, 1, 1);
-            size_t geoIdx = 0;
-            const glm::GeometryAsset* geoAsset = entityData->inputGeoData._character->getGeometryAsset(entityData->inputGeoData._geometryTag, geoIdx); // any LOD should have same extents !
-            if (geoAsset != NULL)
-            {
-                halfExtents = geoAsset->_halfExtentsYUp;
-            }
-            float characterScale = entityData->inputGeoData._simuData->_scales[entityData->inputGeoData._entityIndex];
-            halfExtents *= characterScale;
+            GfVec3f halfExtents;
+            _getCharacterExtent(entityData, halfExtents);
 
             // create the shape of the bounding box
             VtVec3fArray& points = meshData.points;
