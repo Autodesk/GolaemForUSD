@@ -58,12 +58,14 @@ namespace glm
             ((displayColor, "primvars:displayColor"))
             ((visibility, "visibility"))
             ((entityId, "entityId"))
+            ((extentsHint, "extentsHint"))
         );
 
         TF_DEFINE_PRIVATE_TOKENS(
             _skelEntityPropertyTokens,
             ((visibility, "visibility"))
             ((entityId, "entityId"))
+            ((extentsHint, "extentsHint"))
         );
 
         TF_DEFINE_PRIVATE_TOKENS(
@@ -152,6 +154,9 @@ namespace glm
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->displayColor].defaultValue = VtValue(VtVec3fArray({GfVec3f(1, 0.5, 0)}));
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->displayColor].isAnimated = false;
 
+            (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->extentsHint].defaultValue = VtValue(VtVec3fArray({GfVec3f(-0.5, -0.5, -0.5), GfVec3f(0.5, 0.5, 0.5)}));
+            (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->extentsHint].isAnimated = false;
+
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->visibility].defaultValue = VtValue(UsdGeomTokens->inherited);
 
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->entityId].defaultValue = VtValue(int64_t(-1));
@@ -176,6 +181,9 @@ namespace glm
 
             (*_skelEntityProperties)[_skelEntityPropertyTokens->entityId].defaultValue = VtValue(int64_t(-1));
             (*_skelEntityProperties)[_skelEntityPropertyTokens->entityId].isAnimated = false;
+
+            (*_skelEntityProperties)[_skelEntityPropertyTokens->extentsHint].defaultValue = VtValue(VtVec3fArray({GfVec3f(-0.5, -0.5, -0.5), GfVec3f(0.5, 0.5, 0.5)}));
+            (*_skelEntityProperties)[_skelEntityPropertyTokens->extentsHint].isAnimated = false;
 
             // Use the schema to derive the type name tokens from each property's
             // default value.
@@ -643,6 +651,19 @@ namespace glm
                         {
                             RETURN_TRUE_WITH_OPTIONAL_VALUE(SdfTokenListOp::CreateExplicit({TfToken("MaterialBindingAPI")}));
                         }
+                    }
+                }
+
+                if (field == SdfFieldKeys->Kind)
+                {
+                    if (TfMapLookupPtr(_primChildNames, path) != NULL && TfMapLookupPtr(_skinMeshEntityDataMap, path) == NULL)
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(TfToken("group"));
+                    }
+
+                    else if (TfMapLookupPtr(_skinMeshEntityDataMap, path) != NULL)
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(TfToken("component"));
                     }
                 }
 
@@ -1785,40 +1806,40 @@ namespace glm
                 }
 
                 // face 0
-                templateData.faceVertexIndices.push_back(0);
-                templateData.faceVertexIndices.push_back(1);
-                templateData.faceVertexIndices.push_back(2);
                 templateData.faceVertexIndices.push_back(3);
+                templateData.faceVertexIndices.push_back(2);
+                templateData.faceVertexIndices.push_back(1);
+                templateData.faceVertexIndices.push_back(0);
 
                 // face 1
-                templateData.faceVertexIndices.push_back(1);
-                templateData.faceVertexIndices.push_back(5);
-                templateData.faceVertexIndices.push_back(6);
                 templateData.faceVertexIndices.push_back(2);
+                templateData.faceVertexIndices.push_back(6);
+                templateData.faceVertexIndices.push_back(5);
+                templateData.faceVertexIndices.push_back(1);
 
                 // face 2
-                templateData.faceVertexIndices.push_back(2);
-                templateData.faceVertexIndices.push_back(6);
-                templateData.faceVertexIndices.push_back(7);
                 templateData.faceVertexIndices.push_back(3);
+                templateData.faceVertexIndices.push_back(7);
+                templateData.faceVertexIndices.push_back(6);
+                templateData.faceVertexIndices.push_back(2);
 
                 // face 3
-                templateData.faceVertexIndices.push_back(3);
-                templateData.faceVertexIndices.push_back(7);
-                templateData.faceVertexIndices.push_back(4);
                 templateData.faceVertexIndices.push_back(0);
+                templateData.faceVertexIndices.push_back(4);
+                templateData.faceVertexIndices.push_back(7);
+                templateData.faceVertexIndices.push_back(3);
 
                 // face 4
-                templateData.faceVertexIndices.push_back(0);
-                templateData.faceVertexIndices.push_back(4);
-                templateData.faceVertexIndices.push_back(5);
                 templateData.faceVertexIndices.push_back(1);
+                templateData.faceVertexIndices.push_back(5);
+                templateData.faceVertexIndices.push_back(4);
+                templateData.faceVertexIndices.push_back(0);
 
                 // face 5
-                templateData.faceVertexIndices.push_back(4);
-                templateData.faceVertexIndices.push_back(7);
-                templateData.faceVertexIndices.push_back(6);
                 templateData.faceVertexIndices.push_back(5);
+                templateData.faceVertexIndices.push_back(6);
+                templateData.faceVertexIndices.push_back(7);
+                templateData.faceVertexIndices.push_back(4);
             }
 
             TfToken skelAnimName("SkelAnim");
@@ -1840,8 +1861,8 @@ namespace glm
                 }
 
                 TfToken cfName(TfMakeValidIdentifier(glmCfName.c_str()));
-
                 SdfPath cfPath = _GetRootPrimPath().AppendChild(cfName);
+
                 _primSpecPaths.insert(cfPath);
                 rootChildNames.push_back(cfName);
                 std::vector<TfToken>& cfChildNames = _primChildNames[cfPath];
@@ -2023,6 +2044,8 @@ namespace glm
                     {
                         GLM_CROWD_TRACE_WARNING_LIMIT("The entity '" << entityId << "', character '" << character->_name << "' has an invalid rendering type: '" << renderingTypeIdx << "'. Using default rendering type.");
                     }
+
+                    _getCharacterExtent(skinMeshEntityData, entityData->extent);
 
                     entityData->inputGeoData._assets = &entityAssets[entityData->inputGeoData._entityIndex];
 
@@ -2472,6 +2495,10 @@ namespace glm
                             else if (nameToken == _skinMeshEntityPropertyTokens->entityId)
                             {
                                 *value = VtValue(entityData->inputGeoData._entityId);
+                            }
+                            else if (nameToken == _skinMeshEntityPropertyTokens->extentsHint)
+                            {
+                                *value = VtValue(VtVec3fArray({entityData->extent * -1.f, entityData->extent}));
                             }
                             else
                             {
@@ -3404,6 +3431,21 @@ namespace glm
         }
 
         //-----------------------------------------------------------------------------
+        void GolaemUSD_DataImpl::_getCharacterExtent(const SkinMeshEntityData* entityData, GfVec3f& extent) const
+        {
+            glm::Vector3 halfExtents(1, 1, 1);
+            size_t geoIdx = 0;
+            const glm::GeometryAsset* geoAsset = entityData->inputGeoData._character->getGeometryAsset(entityData->inputGeoData._geometryTag, geoIdx); // any LOD should have same extents !
+            if (geoAsset != NULL)
+            {
+                halfExtents = geoAsset->_halfExtentsYUp;
+            }
+            float characterScale = entityData->inputGeoData._simuData->_scales[entityData->inputGeoData._entityIndex];
+            halfExtents *= characterScale;
+            extent.Set(halfExtents[0], halfExtents[1], halfExtents[2]);
+        }
+
+        //-----------------------------------------------------------------------------
         void GolaemUSD_DataImpl::_ComputeBboxData(SkinMeshEntityData* entityData)
         {
             glm::GlmString meshName = "BBOX";
@@ -3418,15 +3460,8 @@ namespace glm
             meshData.templateData = &_skinMeshTemplateDataPerCharPerLod[0][0][{0, 0}];
 
             // compute the bounding box of the current entity
-            glm::Vector3 halfExtents(1, 1, 1);
-            size_t geoIdx = 0;
-            const glm::GeometryAsset* geoAsset = entityData->inputGeoData._character->getGeometryAsset(entityData->inputGeoData._geometryTag, geoIdx); // any LOD should have same extents !
-            if (geoAsset != NULL)
-            {
-                halfExtents = geoAsset->_halfExtentsYUp;
-            }
-            float characterScale = entityData->inputGeoData._simuData->_scales[entityData->inputGeoData._entityIndex];
-            halfExtents *= characterScale;
+            GfVec3f halfExtents;
+            _getCharacterExtent(entityData, halfExtents);
 
             // create the shape of the bounding box
             VtVec3fArray& points = meshData.points;
@@ -3793,13 +3828,17 @@ namespace glm
                             break;
                         }
                     }
-                    if (!materialName.empty())
+
+                    if (materialAssignMode != GolaemMaterialAssignMode::NO_ASSIGNMENT)
                     {
-                        meshTemplateData.materialPath = SdfPathListOp::CreateExplicit({SdfPath(materialName.c_str())});
-                    }
-                    else
-                    {
-                        meshTemplateData.materialPath = (*_skinMeshRelationships)[_skinMeshRelationshipTokens->materialBinding].defaultTargetPath;
+                        if (!materialName.empty())
+                        {
+                            meshTemplateData.materialPath = SdfPathListOp::CreateExplicit({SdfPath(materialName.c_str())});
+                        }
+                        else
+                        {
+                            meshTemplateData.materialPath = (*_skinMeshRelationships)[_skinMeshRelationshipTokens->materialBinding].defaultTargetPath;
+                        }
                     }
                 }
             }
