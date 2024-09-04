@@ -39,6 +39,7 @@ namespace glm
     xx(TfToken, glmCacheDir, "")                    \
     xx(TfToken, glmCharacterFiles, "")              \
     xx(TfToken, glmUsdCharacterFiles, "")           \
+    xx(TfToken, glmEntityIds, "*")                  \
     xx(bool, glmEnableLayout, true)                 \
     xx(TfToken, glmLayoutFiles, "")                 \
 	xx(TfToken, glmTerrainFile, "")                 \
@@ -66,6 +67,7 @@ namespace glm
     (glmCacheDir)                       \
     (glmCharacterFiles)                 \
     (glmUsdCharacterFiles)              \
+    (glmEntityIds)                      \
     (glmEnableLayout)                   \
     (glmLayoutFiles)                    \
 	(glmTerrainFile)                    \
