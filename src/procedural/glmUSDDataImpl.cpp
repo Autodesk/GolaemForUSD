@@ -35,6 +35,8 @@ USD_INCLUDES_END
 
 #include <glmDistance.h>
 
+#include <glmIdsFilter.h>
+
 #include <fstream>
 
 namespace glm
@@ -1842,6 +1844,8 @@ namespace glm
                 templateData.faceVertexIndices.push_back(4);
             }
 
+            glm::IdsFilter entityIdsFilter(_params.glmEntityIds.GetText());
+
             TfToken skelAnimName("SkelAnim");
             TfToken animationsGroupName("Animations");
             GlmString meshVariantEnable("Enable");
@@ -1914,6 +1918,12 @@ namespace glm
                     if (entityId < 0)
                     {
                         // entity was probably killed
+                        continue;
+                    }
+
+                    if (!entityIdsFilter(entityId))
+                    {
+                        // entity is filtered out
                         continue;
                     }
 
@@ -2236,7 +2246,7 @@ namespace glm
 
             if (_startFrame <= _endFrame)
             {
-                for (double currentFrame = _startFrame; currentFrame <= _endFrame; ++currentFrame)
+                for (int currentFrame = _startFrame; currentFrame <= _endFrame; ++currentFrame)
                 {
                     _animTimeSampleTimes.insert(currentFrame);
                 }
