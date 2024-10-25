@@ -40,16 +40,6 @@ namespace glm
 
                 glm::Singleton<USDLogger>::create();
 
-                glm::crowdio::ProductDetails productDetails = GLM_SETUP_PRODUCT_DETAILS;
-                productDetails._fullVersion = glm::crowdio::getGolaemVersion();
-                productDetails._containerApplicationName = "USD";
-                productDetails._containerApplicationVersion = glm::toString(PXR_MAJOR_VERSION) + "." + glm::toString(PXR_MINOR_VERSION);
-                productDetails._notificationHandler = NULL; // todo: install viewport notification
-
-                bool allowCreatePLE = false;
-                bool deferLicenseCheck = false; // check for licenses at crowdio::init
-                glm::crowdio::setupGolaemProduct(".", productDetails, deferLicenseCheck, allowCreatePLE);
-
                 glm::crowdio::init();
             }
             ++s_initCount;
