@@ -122,14 +122,12 @@ if(GOLAEMUSD_STANDALONE_BUILD)
 
     # Include and Link Dependencies
     add_library( ${PROJECT_NAME} SHARED ${LIST_FILES} )
-    target_include_directories(${PROJECT_NAME} PRIVATE ${PYTHON_INCDIR})
     target_include_directories(${PROJECT_NAME} PRIVATE ${FBXSDK_INCDIR})
     target_include_directories(${PROJECT_NAME} PRIVATE ${GOLAEMDEVKIT_INCDIR} )
     target_include_directories(${PROJECT_NAME} PRIVATE ${PXR_INCLUDE_DIRS})
     if(MSVC)
         set_target_properties( ${PROJECT_NAME} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_DEBUG ON )
     endif()
-    target_link_libraries( ${PROJECT_NAME} ${PYTHON_LIBS})
     target_link_libraries( ${PROJECT_NAME} ${FBXSDK_LIBS})
     target_link_libraries(${PROJECT_NAME} ${GOLAEMDEVKIT_LIBS} )
 
@@ -137,7 +135,6 @@ if(GOLAEMUSD_STANDALONE_BUILD)
         # from Houdini toolkit/samples/USD/CMakeLists.txt
         if(MSVC)
             set(_houdini_link_libraries_ 
-                Houdini # Standard Houdini libraries
                 ${_houdini_hfs_root}/custom/houdini/dsolib/libgusd.lib
                 ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_ar.lib
                 ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_arch.lib
@@ -155,12 +152,7 @@ if(GOLAEMUSD_STANDALONE_BUILD)
                 ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdUtils.lib
                 ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_vt.lib
                 ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_work.lib
-                Python::Module
             )
-
-            set(_houdini_link_libraries_
-                ${_houdini_link_libraries_}
-                ${_houdini_hfs_root}/custom/houdini/dsolib/hboost_python${PYTHON_VERSION}${PYTHON_SUBVERSION}-mt-x64.lib)
                 
             target_link_libraries( ${PROJECT_NAME} ${_houdini_link_libraries_})
         else()
@@ -179,9 +171,6 @@ if(GOLAEMUSD_STANDALONE_BUILD)
     else()
         target_link_libraries( ${PROJECT_NAME} usd usdGeom)
     endif()
-
-    # cannot compile debug - windows or linux 
-    set( CROWD_INSTALL_SKIP_DEBUG ON )
 
     if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE "-DNOMINMAX" "/MP" "/nologo" "/wd4251")
@@ -248,9 +237,6 @@ if(GOLAEMUSD_STANDALONE_BUILD)
             endif()
         endforeach()
     endforeach()
-    
-
-    unset( CROWD_INSTALL_SKIP_DEBUG )
 
 # Included in Golaem Solution
 else()
