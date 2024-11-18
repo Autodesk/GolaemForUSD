@@ -10,28 +10,39 @@
 #   This scripts is responsible for finding and configuring variables to use 'USD' packages (compatible with 'USD 19.x, 20.x' packages).
 #
 # Output :
-# - USD_FOUND = Katana found on this system ?
-# - USD_ROOTDIR = Katana root directory
-# - USD_INCDIR = Katana headers directory
-# - USD_LIBS = Katana libraries
+# - USD_FOUND = USD found on this system ?
+# - USD_ROOTDIR = USD root directory
 
 if( ( "${USD_FOUND}" STREQUAL "" ) OR ( NOT USD_FOUND ) )
 
-	set( USD_FOUND OFF )
-	set( USD_REFFILE "pxrConfig.cmake" )
-	set( USD_REQUESTEDDIR "${USD_ROOTDIR}" )
-	unset( USD_ROOTDIR CACHE )
-	find_path( USD_ROOTDIR "${USD_REFFILE}" "${USD_REQUESTEDDIR}" NO_DEFAULT_PATH )
-	if( USD_ROOTDIR )
-		include("${USD_ROOTDIR}/pxrConfig.cmake")
-		if( PXR_LIBRARIES)
-			set( USD_FOUND ON )
-		endif()
-		mark_as_advanced( USD_FOUND)
-	else()
-		set( USD_FOUND OFF )
-		message( SEND_ERROR "USD directory is not correctly set" )
+	if (NOT USD_VERSION)
+		set (USD_VERSION "0.23.08-glm")
 	endif()
-	mark_as_advanced( USD_FOUND USD_INCDIR USD_LIBS )
+
+	set(USD_OS_DIR "")
+	if( MSVC )
+		set(USD_OS_DIR "windows")
+	else()
+		if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0)
+			set(USD_OS_DIR "linux")
+		else() #GCC 11+ -> use new ABI
+			set(USD_OS_DIR "linux_newABI" )
+		endif()	
+	endif()
+	set(USD_ROOTDIR "${GLM_EXTERNALS_HOME}/USD/${USD_VERSION}/${USD_OS_DIR}" )
+
+	set(USD_FOUND OFF)
+	include("${USD_ROOTDIR}/pxrConfig.cmake")
+	if( PXR_LIBRARIES)
+		set(USD_FOUND ON)
+		# add TBB bins
+		if(MSVC)
+			file(GLOB USD_TBB_BINS "${USD_ROOTDIR}/bin/tbb*.dll")
+		else()
+			file(GLOB USD_TBB_BINS "${USD_ROOTDIR}/lib/libtbb*.so*")
+		endif()
+	endif()
+
+	mark_as_advanced(USD_FOUND)
 
 endif()
