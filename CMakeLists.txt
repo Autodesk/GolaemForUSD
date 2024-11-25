@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.25)
 
 option (GOLAEMUSD_STANDALONE_BUILD "Standalone build: ON/OFF" ON)
 
@@ -51,34 +51,126 @@ if(GOLAEMUSD_STANDALONE_BUILD)
         else()
         endif()
     endmacro()
+
+    macro(glm_setup_python)
+        message("Python_EXECUTABLE=${Python_EXECUTABLE}")
+        if ("${Python_EXECUTABLE}" STREQUAL "")
+            message( SEND_ERROR "Python_EXECUTABLE is empty")	
+        endif()
+        set(PY_COMMAND_FILE "${CMAKE_CURRENT_BINARY_DIR}/pyfile.py")
+        if (NOT "${Python_EXECUTABLE}" STREQUAL "")
+            if ("${Python_INCLUDE_DIR}" STREQUAL "")
+                set(PY_COMMAND_FILE_CONTENTS "")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}import sysconfig\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}import os\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}includeDir = sysconfig.get_path(\"include\")\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}if os.path.isdir(includeDir):\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\tprint(includeDir)\n")
+                file(WRITE "${PY_COMMAND_FILE}" "${PY_COMMAND_FILE_CONTENTS}")
+                execute_process(COMMAND ${Python_EXECUTABLE} ${PY_COMMAND_FILE} OUTPUT_VARIABLE Python_INCLUDE_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+            endif()
+        endif()
+        message("Python_INCLUDE_DIR=${Python_INCLUDE_DIR}")
+        if ("${Python_INCLUDE_DIR}" STREQUAL "")
+            message( SEND_ERROR "Could not find Python_INCLUDE_DIR from the python interpreter ${Python_EXECUTABLE}")
+        endif()
+
+        if (NOT "${Python_EXECUTABLE}" STREQUAL "")
+            if ("${Python_LIBRARY}" STREQUAL "")
+                set(PY_COMMAND_FILE_CONTENTS "")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}import sysconfig\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}import os\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}import sys\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}libName=\"\"\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}if sys.platform == \"win32\":\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\tlibName=\"python{}.lib\".format(sysconfig.get_config_var(\"py_version_nodot\"))\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}else:\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\tlibName=sysconfig.get_config_var(\"LDLIBRARY\")\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}dirCandidates = []\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}dirCandidate=sysconfig.get_config_var(\"LIBPL\")\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}if dirCandidate:\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\tdirCandidates += [dirCandidate]\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}dirCandidate=sysconfig.get_config_var(\"srcdir\")\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}if dirCandidate:\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\tdirCandidates += [dirCandidate]\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}dirCandidate=sysconfig.get_config_var(\"LIBDIR\")\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}if dirCandidate:\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\tdirCandidates += [dirCandidate]\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}dirCandidates += [sys.exec_prefix]\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}dirCandidates += [os.path.join(sys.exec_prefix, \"lib\")]\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}dirCandidates += [os.path.join(sys.exec_prefix, \"libs\")]\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}dirCandidates += [os.path.join(sys.exec_prefix, os.pardir, \"lib\")]\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}dirCandidates += [os.path.join(sys.exec_prefix, os.pardir, \"libs\")]\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}for dirCandidate in dirCandidates:\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\tlibCandidate=os.path.join(dirCandidate, libName)\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\tif os.path.isfile(libCandidate):\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\t\tprint(libCandidate)\n")
+                set(PY_COMMAND_FILE_CONTENTS "${PY_COMMAND_FILE_CONTENTS}\t\tbreak\n")
+                file(WRITE "${PY_COMMAND_FILE}" "${PY_COMMAND_FILE_CONTENTS}")
+                execute_process(COMMAND ${Python_EXECUTABLE} ${PY_COMMAND_FILE} OUTPUT_VARIABLE Python_LIBRARY OUTPUT_STRIP_TRAILING_WHITESPACE)
+            endif()
+        endif()
+        message("Python_LIBRARY=${Python_LIBRARY}")
+        if ("${Python_LIBRARY}" STREQUAL "")
+            message( SEND_ERROR "Could not find Python_LIBRARY from the python interpreter ${Python_EXECUTABLE}")
+        endif()
+    endmacro()
     ############################################################
     # END Declare various macros
     ############################################################
 
     project(GolaemUSD)
 
-    # Add dependencies
-    if(MSVC)
-        # set this for FindFbxSdk
-        set(BUILD_COMPILER_VERSION "vc140")
-        set(BUILD_ARCHITECTURE_VERSION "x64")
+    if( NOT MSVC )
+        # Needed to ensure that RPATH is set ASAP, even before copying installed libraries in multiple locations
+        set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+        # set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    endif()
+
+    set( BUILD_ARCHITECTURE_VERSION "x64" )
+    if( MSVC )
+		set( BUILD_COMPILER_VERSION "vc${MSVC_TOOLSET_VERSION}")
+	elseif( CMAKE_COMPILER_IS_GNUCC )
+		execute_process( COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION )
+		string( REGEX MATCHALL "[0-9]+" GCC_VERSION_NUMBERS ${GCC_VERSION} )
+		set( BUILD_COMPILER_VERSION "gcc" )
+		foreach( number ${GCC_VERSION_NUMBERS} )
+			set( BUILD_COMPILER_VERSION "${BUILD_COMPILER_VERSION}${number}" )
+		endforeach()
     endif()
 
     set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cfg/cmake")
     
-    find_package(Python REQUIRED)
+    # Add dependencies
     find_package(FbxSdk REQUIRED)
-    find_package(USD REQUIRED)
-   
+    if(BUILD_USD_HOUDINI)
+        find_package(GlmHoudini REQUIRED)
+    else()
+        find_package(USD REQUIRED)
+    endif()
+
     # Golaem Devkit dependency
     set( GOLAEMDEVKIT_ROOTDIR "Golaem Devkit Dir" CACHE PATH "Golaem Devkit directory" )
     set( GOLAEMDEVKIT_INCDIR "${GOLAEMDEVKIT_ROOTDIR}/include")
     set( GOLAEMDEVKIT_LIBDIR "${GOLAEMDEVKIT_ROOTDIR}/lib")
     if(MSVC)
         list(APPEND GOLAEMDEVKIT_LIBS "${GOLAEMDEVKIT_LIBDIR}/glmCore_${BUILD_COMPILER_VERSION}${BUILD_ARCHITECTURE_VERSION}.lib")
-        list(APPEND GOLAEMDEVKIT_LIBS "${GOLAEMDEVKIT_LIBDIR}/glmCrowdIO.lib")
+        list(APPEND GOLAEMDEVKIT_LIBS "${GOLAEMDEVKIT_LIBDIR}/glmCrowdIO_${BUILD_COMPILER_VERSION}${BUILD_ARCHITECTURE_VERSION}.lib")
+        list(APPEND GOLAEMDEVKIT_LIBS "${GOLAEMDEVKIT_LIBDIR}/glmSDK_${BUILD_COMPILER_VERSION}${BUILD_ARCHITECTURE_VERSION}.lib")
+        foreach(physx_bin PxPvdSDK PxFoundation PhysX3 PhysX3Common PhysX3Cooking PhysX3CharacterKinematic PhysX3Gpu)
+            list(APPEND GOLAEMDEVKIT_PHYSX_INSTALL_BINS "${GOLAEMDEVKIT_ROOTDIR}/bin/glm_${physx_bin}PROFILE_${BUILD_ARCHITECTURE_VERSION}.dll")
+        endforeach()
+        foreach(physx_bin APEX_Clothing ApexFramework APEX_Legacy)
+            list(APPEND GOLAEMDEVKIT_PHYSX_INSTALL_BINS "${GOLAEMDEVKIT_ROOTDIR}/bin/${physx_bin}PROFILE_${BUILD_ARCHITECTURE_VERSION}_glm.dll")
+        endforeach()
     else()
-        list(APPEND GOLAEMDEVKIT_LIBS "${GOLAEMDEVKIT_LIBDIR}/libglmCrowdIO.so")
+        list(APPEND GOLAEMDEVKIT_LIBS "${GOLAEMDEVKIT_LIBDIR}/libglmCore_${BUILD_COMPILER_VERSION}${BUILD_ARCHITECTURE_VERSION}.so")
+        list(APPEND GOLAEMDEVKIT_LIBS "${GOLAEMDEVKIT_LIBDIR}/libglmCrowdIO_${BUILD_COMPILER_VERSION}${BUILD_ARCHITECTURE_VERSION}.so")
+        list(APPEND GOLAEMDEVKIT_LIBS "${GOLAEMDEVKIT_LIBDIR}/libglmSDK_${BUILD_COMPILER_VERSION}${BUILD_ARCHITECTURE_VERSION}.so")
+
+        foreach(physx_bin PxPvdSDK PxFoundation PhysX3 PhysX3Common PhysX3Cooking PhysX3CharacterKinematic)
+            list(APPEND GOLAEMDEVKIT_PHYSX_INSTALL_BINS "${GOLAEMDEVKIT_ROOTDIR}/lib/lib${physx_bin}PROFILE_${BUILD_ARCHITECTURE_VERSION}.so")
+        endforeach()
     endif(MSVC)
 
     # List Files
@@ -89,20 +181,61 @@ if(GOLAEMUSD_STANDALONE_BUILD)
 
     # Include and Link Dependencies
     add_library( ${PROJECT_NAME} SHARED ${LIST_FILES} )
-    target_include_directories(${PROJECT_NAME} PRIVATE ${PYTHON_INCDIR})
     target_include_directories(${PROJECT_NAME} PRIVATE ${FBXSDK_INCDIR})
     target_include_directories(${PROJECT_NAME} PRIVATE ${GOLAEMDEVKIT_INCDIR} )
     target_include_directories(${PROJECT_NAME} PRIVATE ${PXR_INCLUDE_DIRS})
     if(MSVC)
         set_target_properties( ${PROJECT_NAME} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_DEBUG ON )
     endif()
-    target_link_libraries( ${PROJECT_NAME} ${PYTHON_LIBS})
     target_link_libraries( ${PROJECT_NAME} ${FBXSDK_LIBS})
     target_link_libraries(${PROJECT_NAME} ${GOLAEMDEVKIT_LIBS} )
-    target_link_libraries( ${PROJECT_NAME} usd usdGeom)
 
-    # cannot compile debug - windows or linux 
-    set( CROWD_INSTALL_SKIP_DEBUG ON )
+    if(BUILD_USD_HOUDINI)
+        # from Houdini toolkit/samples/USD/CMakeLists.txt
+        if(MSVC)
+            set(_houdini_link_libraries_ 
+                Houdini # Standard Houdini libraries
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libgusd.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_ar.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_arch.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_gf.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_js.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_kind.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_pcp.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_plug.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_sdf.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_tf.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usd.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdGeom.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdRi.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdShade.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdUtils.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_vt.lib
+                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_work.lib
+                Python::Module
+            )
+
+            set(_houdini_link_libraries_
+                ${_houdini_link_libraries_}
+                ${_houdini_hfs_root}/custom/houdini/dsolib/hboost_python${PYTHON_VERSION}${PYTHON_SUBVERSION}-mt-x64.lib)
+                
+            target_link_libraries( ${PROJECT_NAME} ${_houdini_link_libraries_})
+        else()
+            # Link against Houdini libraries (including USD)
+            if ( DEFINED ENV{HOUDINI_HDK_LINK_GUSD} )
+                target_link_libraries( ${PROJECT_NAME}
+                    Houdini					# Standard Houdini libraries
+                    ${_houdini_hfs_root}/dsolib/libgusd.so
+                )
+            else ()
+                target_link_libraries( ${PROJECT_NAME}
+                    Houdini			        # Standard Houdini libraries
+                )
+            endif ()
+        endif()
+    else()
+        target_link_libraries( ${PROJECT_NAME} usd usdGeom)
+    endif()
 
     if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE "-DNOMINMAX" "/MP" "/nologo" "/wd4251")
@@ -114,11 +247,26 @@ if(GOLAEMUSD_STANDALONE_BUILD)
     else()
         # flags needed for some usd includes (that use hash_set)
         target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated")
+
+        # follow the vfx reference platform: https://vfxplatform.com/
+        if( CMAKE_COMPILER_IS_GNUCC )
+            if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0) # gcc 5.x 6.x
+                target_compile_options(${PROJECT_NAME} PUBLIC "-std=c++14" "-D_GLIBCXX_USE_CXX11_ABI=0")
+            elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0) # gcc 7.x 8.x 9.x 10.x
+                target_compile_options(${PROJECT_NAME} PUBLIC "-std=c++17" "-D_GLIBCXX_USE_CXX11_ABI=0") 
+            else() # gcc 11.x (used versions should be 11.1 at least)
+                target_compile_options(${PROJECT_NAME} PUBLIC "-std=c++17" "-D_GLIBCXX_USE_CXX11_ABI=1")
+            endif()
+        endif()
+
+        set_target_properties( ${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../lib:$ORIGIN/../../../lib" )
     endif()
+
 
     # project label
     string(REGEX REPLACE "^glm" "USD_" CUSTOM_PROJECT_LABEL "${PROJECT_NAME}" )
     set_target_properties( ${PROJECT_NAME} PROPERTIES PROJECT_LABEL ${CUSTOM_PROJECT_LABEL} )
+    set_target_properties( ${PROJECT_NAME} PROPERTIES PREFIX "" )
  
     # Update plugInfo.json
     file( READ "${CMAKE_CURRENT_SOURCE_DIR}/src/procedural/plugInfo.json" PLUGININFO_PATH_CONTENTS )
@@ -131,13 +279,29 @@ if(GOLAEMUSD_STANDALONE_BUILD)
     set( GOLAEM_INSTALL_PATH_Release "${GOLAEM_INSTALL_PATH}" )
 
     foreach( configuration "Debug" "Release" )
-        install (TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "${GOLAEM_INSTALL_PATH_${configuration}}/procedurals/usd" CONFIGURATIONS ${configuration})
+        if( MSVC )
+            install (TARGETS ${PROJECT_NAME} RUNTIME CONFIGURATIONS ${configuration} DESTINATION "${GOLAEM_INSTALL_PATH_${configuration}}/procedurals/usd" )
+        else()
+            install (TARGETS ${PROJECT_NAME} CONFIGURATIONS ${configuration} DESTINATION "${GOLAEM_INSTALL_PATH_${configuration}}/procedurals/usd" )
+        endif()
         set( PLUGININFO_PATH_${configuration} "${CMAKE_BINARY_DIR}/${configuration}/plugInfo.json" )
         file( WRITE "${PLUGININFO_PATH_${configuration}}" "${PLUGININFO_PATH_CONTENTS_${configuration}}" )
         install( FILES "${PLUGININFO_PATH_${configuration}}" CONFIGURATIONS ${configuration} DESTINATION "${GOLAEM_INSTALL_PATH_${configuration}}/procedurals/usd" )      # install plugInfo file
+        foreach(GOLAEMDEVKIT_LIB ${GOLAEMDEVKIT_LIBS})
+            if( MSVC )
+                install( FILES "${GOLAEMDEVKIT_LIB}" CONFIGURATIONS ${configuration} DESTINATION "${GOLAEM_INSTALL_PATH_${configuration}}/bin" )
+            else()
+                install( FILES "${GOLAEMDEVKIT_LIB}" CONFIGURATIONS ${configuration} DESTINATION "${GOLAEM_INSTALL_PATH_${configuration}}/lib" )
+            endif()
+        endforeach()
+        foreach(physx_bin ${GOLAEMDEVKIT_PHYSX_INSTALL_BINS})
+            if( MSVC )
+                install( FILES "${physx_bin}" CONFIGURATIONS ${configuration} DESTINATION "${GOLAEM_INSTALL_PATH_${configuration}}/bin" )
+            else()
+                install( FILES "${physx_bin}" CONFIGURATIONS ${configuration} DESTINATION "${GOLAEM_INSTALL_PATH_${configuration}}/lib" )
+            endif()
+        endforeach()
     endforeach()
-
-    unset( CROWD_INSTALL_SKIP_DEBUG )
 
 # Included in Golaem Solution
 else()
