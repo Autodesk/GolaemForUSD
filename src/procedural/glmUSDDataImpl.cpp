@@ -1318,10 +1318,10 @@ namespace glm
                         {
                         case glm::ShaderAttributeType::INT:
                         {
-							glm::GlmString attrName, subAttrName;
-							glm::crowdio::RendererAttributeType::Value overrideType(glm::crowdio::RendererAttributeType::END);
-							glm::crowdio::parseRendererAttribute("arnold", shaderAttr._name, attrName, subAttrName, overrideType);
-							if(overrideType == glm::crowdio::RendererAttributeType::BOOL)
+                            glm::GlmString attrName, subAttrName;
+                            glm::crowdio::RendererAttributeType::Value overrideType(glm::crowdio::RendererAttributeType::END);
+                            glm::crowdio::parseRendererAttribute("arnold", shaderAttr._name, attrName, subAttrName, overrideType);
+                            if (overrideType == glm::crowdio::RendererAttributeType::BOOL)
                             {
                                 *value = VtValue(genericEntityData->intShaderAttrValues[specificAttrIdx] != 0);
                             }
@@ -1762,12 +1762,12 @@ namespace glm
                     {
                         continue;
                     }
+                    auto& characterTemplateData = _skinMeshTemplateDataPerCharPerLod[iChar];
 
                     glm::crowdio::InputEntityGeoData inputGeoData;
                     inputGeoData._fbxStorage = &getFbxStorage();
                     inputGeoData._fbxBaker = &getFbxBaker();
                     inputGeoData._geometryTag = _params.glmGeometryTag;
-                    inputGeoData._enableLOD = _params.glmLodMode != 0 ? 1 : 0;
 
                     inputGeoData._dirMapRules = dirmapRules;
                     inputGeoData._entityId = -1;
@@ -1775,6 +1775,9 @@ namespace glm
                     inputGeoData._entityToBakeIndex = -1;
                     inputGeoData._character = character;
                     inputGeoData._characterIdx = iChar;
+
+                    size_t lodCount = character->getGeometryAssetsCount(inputGeoData._geometryTag);
+                    characterTemplateData.resize(lodCount);
 
                     // add all assets
                     meshAssets.resize(character->_meshAssets.size());
@@ -1784,12 +1787,15 @@ namespace glm
                     }
                     inputGeoData._assets = &meshAssets;
 
-                    auto& characterTemplateData = _skinMeshTemplateDataPerCharPerLod[iChar];
-                    glm::crowdio::OutputEntityGeoData outputData; // TODO: see if storage is better
-                    glm::crowdio::GlmGeometryGenerationStatus geoStatus = glm::crowdio::glmPrepareEntityGeometry(&inputGeoData, &outputData);
-                    if (geoStatus == glm::crowdio::GIO_SUCCESS)
+                    for (size_t iLod = 0; iLod < lodCount; ++iLod)
                     {
-                        _ComputeSkinMeshTemplateData(characterTemplateData, inputGeoData, outputData);
+                        inputGeoData._geoFileIndex = static_cast<int32_t>(iLod);
+                        glm::crowdio::OutputEntityGeoData outputData; // TODO: see if storage is better
+                        glm::crowdio::GlmGeometryGenerationStatus geoStatus = glm::crowdio::glmPrepareEntityGeometry(&inputGeoData, &outputData);
+                        if (geoStatus == glm::crowdio::GIO_SUCCESS)
+                        {
+                            _ComputeSkinMeshTemplateData(characterTemplateData[iLod], inputGeoData, outputData);
+                        }
                     }
                 }
             }
@@ -1946,8 +1952,8 @@ namespace glm
                         skinMeshEntityData = &_skinMeshEntityDataMap[entityPath];
                         entityData = skinMeshEntityData;
 
-                        skinMeshEntityData->inputGeoData._fbxStorage = &getFbxStorage();
-                        skinMeshEntityData->inputGeoData._fbxBaker = &getFbxBaker();
+                        entityData->inputGeoData._fbxStorage = &getFbxStorage();
+                        entityData->inputGeoData._fbxBaker = &getFbxBaker();
                         entityData->inputGeoData._geometryTag = _params.glmGeometryTag;
                         entityData->inputGeoData._enableLOD = _params.glmLodMode != 0 ? 1 : 0;
                     }
@@ -2043,17 +2049,6 @@ namespace glm
 
                     entityData->inputGeoData._character = character;
                     entityData->inputGeoData._characterIdx = characterIdx;
-                    int32_t renderingTypeIdx = simuData->_renderingTypeIdx[iEntity];
-                    const glm::RenderingType* renderingType = NULL;
-                    if (renderingTypeIdx >= 0 && renderingTypeIdx < character->_renderingTypes.sizeInt())
-                    {
-                        renderingType = &character->_renderingTypes[renderingTypeIdx];
-                    }
-
-                    if (renderingType == NULL)
-                    {
-                        GLM_CROWD_TRACE_WARNING_LIMIT("The entity '" << entityId << "', character '" << character->_name << "' has an invalid rendering type: '" << renderingTypeIdx << "'. Using default rendering type.");
-                    }
 
                     entityData->inputGeoData._assets = &entityAssets[entityData->inputGeoData._entityIndex];
 
@@ -2080,7 +2075,7 @@ namespace glm
                         {
                             // compute mesh names
                             glm::PODArray<int> furAssetIds;
-							glm::PODArray<int> dummyDeepAssets;
+                            glm::PODArray<int> dummyDeepAssets;
                             glm::PODArray<size_t> meshAssetNameIndices;
                             glm::PODArray<int> meshAssetMaterialIndices;
                             glm::Array<glm::GlmString> meshAliases;
@@ -2088,7 +2083,7 @@ namespace glm
                                 skelEntityData->inputGeoData._character,
                                 skelEntityData->inputGeoData._entityId,
                                 *skelEntityData->inputGeoData._assets,
-								dummyDeepAssets,
+                                dummyDeepAssets,
                                 entityMeshNames,
                                 meshAliases,
                                 furAssetIds,
@@ -2118,7 +2113,7 @@ namespace glm
                             animData.boneSnsOffset = simuData->_snsOffsetPerEntityType[entityType] + simuData->_indexInEntityType[entityData->inputGeoData._entityIndex] * simuData->_snsCountPerEntityType[entityType];
                         }
 
-                        for(size_t iMesh = 0, meshCount = character->_meshAssets.size(); iMesh < meshCount; ++iMesh)
+                        for (size_t iMesh = 0, meshCount = character->_meshAssets.size(); iMesh < meshCount; ++iMesh)
                         {
                             std::string meshName = TfMakeValidIdentifier(character->_meshAssets[iMesh]._name.c_str());
                             skelEntityData->geoVariants[meshName] = meshVariantDisable.c_str();
@@ -2129,6 +2124,7 @@ namespace glm
                             skelEntityData->geoVariants[meshName] = meshVariantEnable.c_str();
                         }
 
+                        size_t geometryFileIdx = 0;
                         if (_params.glmLodMode > 0)
                         {
                             float* rootPos = entityData->inputGeoData._frameDatas[0]->_bonePositions[entityData->bonePositionOffset];
@@ -2156,17 +2152,28 @@ namespace glm
                             }
 
                             float distanceToCamera = glm::distance(entityPos, cameraPos);
-                            size_t geoIdx = 0;
                             PODArray<float> overrideMinLodDistances;
                             PODArray<float> overrideMaxLodDistances;
                             crowdio::getLodOverridesFromCache(overrideMinLodDistances, overrideMaxLodDistances, &entityData->inputGeoData);
-                            character->getGeometryAsset(_params.glmGeometryTag, geoIdx, distanceToCamera, &overrideMinLodDistances, &overrideMaxLodDistances);
-
-                            // set the lod variant
-                            lodName = "lod";
-                            lodName += glm::toString(geoIdx);
-                            skelEntityData->geoVariants[lodVariantSetName.c_str()] = lodName.c_str();
+                            character->getGeometryAsset(_params.glmGeometryTag, geometryFileIdx, distanceToCamera, &overrideMinLodDistances, &overrideMaxLodDistances);
                         }
+                        else
+                        {
+                            // get the lod variant from the cache
+                            int geoDataIndex = entityData->inputGeoData._simuData->_iGeoBehaviorOffsetPerEntityType[entityType] + entityData->inputGeoData._simuData->_indexInEntityType[entityData->inputGeoData._entityIndex];
+                            if (entityData->inputGeoData._frameDatas[0] != NULL)
+                            {
+                                uint16_t cacheGeoIdx = entityData->inputGeoData._frameDatas[0]->_geoBehaviorGeometryIds[geoDataIndex];
+                                if (cacheGeoIdx != UINT16_MAX)
+                                {
+                                    geometryFileIdx = cacheGeoIdx;
+                                }
+                            }
+                        }
+                        // set the lod variant
+                        lodName = "lod";
+                        lodName += glm::toString(geometryFileIdx);
+                        skelEntityData->geoVariants[lodVariantSetName.c_str()] = lodName.c_str();
                     }
                     else if (displayMode == GolaemDisplayMode::BOUNDING_BOX)
                     {
@@ -2174,21 +2181,21 @@ namespace glm
                     }
                     else if (displayMode == GolaemDisplayMode::SKINMESH)
                     {
-                        auto& characterTemplateData = _skinMeshTemplateDataPerCharPerLod[skinMeshEntityData->inputGeoData._characterIdx];
+                        auto& characterTemplateData = _skinMeshTemplateDataPerCharPerLod[entityData->inputGeoData._characterIdx];
 
                         glm::PODArray<int> gchaMeshIds;
                         glm::PODArray<int> meshAssetMaterialIndices;
                         {
                             // compute mesh names
                             glm::PODArray<int> furAssetIds;
-							glm::PODArray<int> dummyDeepAssets;
+                            glm::PODArray<int> dummyDeepAssets;
                             glm::PODArray<size_t> meshAssetNameIndices;
                             glm::Array<glm::GlmString> meshAliases;
                             glm::crowdio::computeMeshNames(
-                                skinMeshEntityData->inputGeoData._character,
-                                skinMeshEntityData->inputGeoData._entityId,
-                                *skinMeshEntityData->inputGeoData._assets,
-								dummyDeepAssets,
+                                entityData->inputGeoData._character,
+                                entityData->inputGeoData._entityId,
+                                *entityData->inputGeoData._assets,
+                                dummyDeepAssets,
                                 entityMeshNames,
                                 meshAliases,
                                 furAssetIds,
@@ -2200,7 +2207,17 @@ namespace glm
                         if (_params.glmLodMode == 0)
                         {
                             // no lod path
-                            const auto& lodTemplateData = characterTemplateData[0];
+                            int geoDataIndex = entityData->inputGeoData._simuData->_iGeoBehaviorOffsetPerEntityType[entityType] + entityData->inputGeoData._simuData->_indexInEntityType[entityData->inputGeoData._entityIndex];
+                            int geometryFileIdx = 0;
+                            if (entityData->inputGeoData._frameDatas[0] != NULL)
+                            {
+                                uint16_t cacheGeoIdx = entityData->inputGeoData._frameDatas[0]->_geoBehaviorGeometryIds[geoDataIndex];
+                                if (cacheGeoIdx != UINT16_MAX)
+                                {
+                                    geometryFileIdx = cacheGeoIdx;
+                                }
+                            }
+                            const auto& lodTemplateData = characterTemplateData[geometryFileIdx];
 
                             _InitSkinMeshData(entityData->entityPath, skinMeshEntityData, NULL, skinMeshEntityData->meshData, lodTemplateData, gchaMeshIds, meshAssetMaterialIndices);
                         }
@@ -3560,7 +3577,7 @@ namespace glm
         }
 
         //-----------------------------------------------------------------------------
-        void GolaemUSD_DataImpl::_ComputeSkinMeshTemplateData(glm::Array<std::map<std::pair<int, int>, SkinMeshTemplateData>>& characterTemplateData, const glm::crowdio::InputEntityGeoData& inputGeoData, const glm::crowdio::OutputEntityGeoData& outputData)
+        void GolaemUSD_DataImpl::_ComputeSkinMeshTemplateData(std::map<std::pair<int, int>, SkinMeshTemplateData>& lodTemplateData, const glm::crowdio::InputEntityGeoData& inputGeoData, const glm::crowdio::OutputEntityGeoData& outputData)
         {
             glm::GlmString materialPath = _params.glmMaterialPath.GetText();
             GolaemMaterialAssignMode::Value materialAssignMode = (GolaemMaterialAssignMode::Value)_params.glmMaterialAssignMode;
@@ -3568,287 +3585,275 @@ namespace glm
             const glm::PODArray<int>& shadingGroupToSurfaceShader = _sgToSsPerChar[inputGeoData._characterIdx];
 
             glm::GlmString meshName, meshAlias, materialSuffix;
-            characterTemplateData.resize(outputData._geometryFileIndexes.size());
-            for (size_t iLod = 0, lodCount = characterTemplateData.size(); iLod < lodCount; ++iLod)
+
+            size_t meshCount = outputData._meshAssetNameIndices.size();
+            for (size_t iRenderMesh = 0; iRenderMesh < meshCount; ++iRenderMesh)
             {
-                crowdio::CrowdFBXCharacter* fbxCharacter = NULL;
-                crowdio::CrowdGcgCharacter* gcgCharacter = NULL;
+                meshName = outputData._meshAssetNames[outputData._meshAssetNameIndices[iRenderMesh]];
+                meshAlias = outputData._meshAssetAliases[outputData._meshAssetNameIndices[iRenderMesh]];
+                int materialIdx = outputData._meshAssetMaterialIndices[iRenderMesh];
+                int meshAssetIndex = outputData._gchaMeshIds[iRenderMesh];
+                if (materialIdx != 0)
+                {
+                    materialSuffix = glm::toString(materialIdx);
+                    meshName += materialSuffix;
+                    meshAlias += materialSuffix;
+                }
+
+                // create USD hierarchy based on alias export per mesh data
+                meshAlias.trim("|");
+                if (meshAlias.empty())
+                {
+                    meshAlias = meshName;
+                }
+
+                SkinMeshTemplateData& meshTemplateData = lodTemplateData[{meshAssetIndex, materialIdx}];
+                meshTemplateData.meshAlias = meshAlias;
+
                 if (outputData._geoType == glm::crowdio::GeometryType::FBX)
                 {
-                    fbxCharacter = outputData._fbxCharacters[iLod];
-                }
-                else if (outputData._geoType == glm::crowdio::GeometryType::GCG)
-                {
-                    gcgCharacter = outputData._gcgCharacters[iLod];
-                }
+                    crowdio::CrowdFBXCharacter* fbxCharacter = outputData._fbxCharacters[0];
+                    size_t iGeoFileMesh = outputData._meshAssetNameIndices[iRenderMesh];
+                    // when fbxMesh == NULL, vertexCount == 0, so no need to check fbxMesh != NULL
+                    FbxMesh* fbxMesh = fbxCharacter->getCharacterFBXMesh(iGeoFileMesh);
 
-                auto& lodTemplateData = characterTemplateData[iLod];
-                size_t meshCount = outputData._meshAssetNameIndices.size();
-                for (size_t iRenderMesh = 0; iRenderMesh < meshCount; ++iRenderMesh)
-                {
-                    meshName = outputData._meshAssetNames[outputData._meshAssetNameIndices[iRenderMesh]];
-                    meshAlias = outputData._meshAssetAliases[outputData._meshAssetNameIndices[iRenderMesh]];
-                    int materialIdx = outputData._meshAssetMaterialIndices[iRenderMesh];
-                    int meshAssetIndex = outputData._gchaMeshIds[iRenderMesh];
-                    if (materialIdx != 0)
+                    FbxLayer* fbxLayer0 = fbxMesh->GetLayer(0);
+                    bool hasMaterials = false;
+                    FbxLayerElementMaterial* materialElement = NULL;
+                    if (fbxLayer0 != NULL)
                     {
-                        materialSuffix = glm::toString(materialIdx);
-                        meshName += materialSuffix;
-                        meshAlias += materialSuffix;
+                        materialElement = fbxLayer0->GetMaterials();
+                        hasMaterials = materialElement != NULL;
                     }
 
-                    // create USD hierarchy based on alias export per mesh data
-                    meshAlias.trim("|");
-                    if (meshAlias.empty())
+                    unsigned int fbxVertexCount = fbxMesh->GetControlPointsCount();
+                    unsigned int fbxPolyCount = fbxMesh->GetPolygonCount();
+                    glm::PODArray<int> vertexMasks;
+                    glm::PODArray<int> polygonMasks;
+
+                    vertexMasks.assign(fbxVertexCount, -1);
+                    polygonMasks.assign(fbxPolyCount, 0);
+
+                    int meshMtlIdx = outputData._meshAssetMaterialIndices[iRenderMesh];
+
+                    // check material id and reconstruct data
+                    for (unsigned int iFbxPoly = 0; iFbxPoly < fbxPolyCount; ++iFbxPoly)
                     {
-                        meshAlias = meshName;
-                    }
-
-                    SkinMeshTemplateData& meshTemplateData = lodTemplateData[{meshAssetIndex, materialIdx}];
-                    meshTemplateData.meshAlias = meshAlias;
-
-                    if (outputData._geoType == glm::crowdio::GeometryType::FBX)
-                    {
-                        size_t iGeoFileMesh = outputData._meshAssetNameIndices[iRenderMesh];
-                        // when fbxMesh == NULL, vertexCount == 0, so no need to check fbxMesh != NULL
-                        FbxMesh* fbxMesh = fbxCharacter->getCharacterFBXMesh(iGeoFileMesh);
-
-                        FbxLayer* fbxLayer0 = fbxMesh->GetLayer(0);
-                        bool hasMaterials = false;
-                        FbxLayerElementMaterial* materialElement = NULL;
-                        if (fbxLayer0 != NULL)
+                        int currentMtlIdx = 0;
+                        if (hasMaterials)
                         {
-                            materialElement = fbxLayer0->GetMaterials();
-                            hasMaterials = materialElement != NULL;
+                            currentMtlIdx = materialElement->GetIndexArray().GetAt(iFbxPoly);
                         }
-
-                        unsigned int fbxVertexCount = fbxMesh->GetControlPointsCount();
-                        unsigned int fbxPolyCount = fbxMesh->GetPolygonCount();
-                        glm::PODArray<int> vertexMasks;
-                        glm::PODArray<int> polygonMasks;
-
-                        vertexMasks.assign(fbxVertexCount, -1);
-                        polygonMasks.assign(fbxPolyCount, 0);
-
-                        int meshMtlIdx = outputData._meshAssetMaterialIndices[iRenderMesh];
-
-                        // check material id and reconstruct data
-                        for (unsigned int iFbxPoly = 0; iFbxPoly < fbxPolyCount; ++iFbxPoly)
+                        if (currentMtlIdx == meshMtlIdx)
                         {
-                            int currentMtlIdx = 0;
-                            if (hasMaterials)
+                            polygonMasks[iFbxPoly] = 1;
+                            int polySize = fbxMesh->GetPolygonSize(iFbxPoly);
+                            for (int iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex)
                             {
-                                currentMtlIdx = materialElement->GetIndexArray().GetAt(iFbxPoly);
-                            }
-                            if (currentMtlIdx == meshMtlIdx)
-                            {
-                                polygonMasks[iFbxPoly] = 1;
-                                int polySize = fbxMesh->GetPolygonSize(iFbxPoly);
-                                for (int iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex)
+                                int iFbxVertex = fbxMesh->GetPolygonVertex(iFbxPoly, iPolyVertex);
+                                int& vertexMask = vertexMasks[iFbxVertex];
+                                if (vertexMask >= 0)
                                 {
-                                    int iFbxVertex = fbxMesh->GetPolygonVertex(iFbxPoly, iPolyVertex);
-                                    int& vertexMask = vertexMasks[iFbxVertex];
-                                    if (vertexMask >= 0)
-                                    {
-                                        continue;
-                                    }
-                                    vertexMask = 0;
+                                    continue;
                                 }
-                            }
-                        }
-
-                        int iActualVertex = 0;
-                        for (unsigned int iFbxVertex = 0; iFbxVertex < fbxVertexCount; ++iFbxVertex)
-                        {
-                            int& vertexMask = vertexMasks[iFbxVertex];
-                            if (vertexMask >= 0)
-                            {
-                                vertexMask = iActualVertex;
-                                ++iActualVertex;
-                            }
-                        }
-
-                        meshTemplateData.pointsCount = iActualVertex;
-
-                        for (unsigned int iFbxPoly = 0; iFbxPoly < fbxPolyCount; ++iFbxPoly)
-                        {
-                            if (polygonMasks[iFbxPoly])
-                            {
-                                int polySize = fbxMesh->GetPolygonSize(iFbxPoly);
-                                meshTemplateData.faceVertexCounts.push_back(polySize);
-                                for (int iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex)
-                                {
-                                    // do not reverse polygon order
-                                    int iFbxVertex = fbxMesh->GetPolygonVertex(iFbxPoly, iPolyVertex);
-                                    int vertexId = vertexMasks[iFbxVertex];
-                                    meshTemplateData.faceVertexIndices.push_back(vertexId);
-                                } // iPolyVertex
-                            }
-                        }
-
-                        // find how many uv layers are available
-                        int uvSetCount = fbxMesh->GetLayerCount(FbxLayerElement::eUV);
-                        meshTemplateData.uvSets.resize(uvSetCount);
-                        FbxLayerElementUV* uvElement = NULL;
-                        for (int iUVSet = 0; iUVSet < uvSetCount; ++iUVSet)
-                        {
-                            VtVec2fArray& uvs = meshTemplateData.uvSets[iUVSet];
-                            uvs.resize(meshTemplateData.faceVertexIndices.size());
-                            FbxLayer* layer = fbxMesh->GetLayer(fbxMesh->GetLayerTypedIndex((int)iUVSet, FbxLayerElement::eUV));
-                            uvElement = layer->GetUVs();
-                            bool uvsByControlPoint = uvElement->GetMappingMode() == FbxLayerElement::eByControlPoint;
-                            bool uvReferenceDirect = uvElement->GetReferenceMode() == FbxLayerElement::eDirect;
-
-                            if (uvsByControlPoint)
-                            {
-                                int uvIndex = 0;
-                                for (unsigned int iFbxPoly = 0, actualIndexByPolyVertex = 0; iFbxPoly < fbxPolyCount; ++iFbxPoly)
-                                {
-                                    int polySize = fbxMesh->GetPolygonSize(iFbxPoly);
-                                    if (polygonMasks[iFbxPoly])
-                                    {
-                                        for (int iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex, ++actualIndexByPolyVertex)
-                                        {
-                                            // do not reverse polygon order
-                                            uvIndex = vertexMasks[fbxMesh->GetPolygonVertex(iFbxPoly, iPolyVertex)];
-                                            if (!uvReferenceDirect)
-                                            {
-                                                uvIndex = uvElement->GetIndexArray().GetAt(uvIndex);
-                                            }
-                                            FbxVector2 tempUV(uvElement->GetDirectArray().GetAt(uvIndex));
-                                            uvs[actualIndexByPolyVertex].Set((float)tempUV[0], (float)tempUV[1]);
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                int uvIndex = 0;
-                                for (unsigned int iFbxPoly = 0, actualIndexByPolyVertex = 0, fbxIndexByPolyVertex = 0; iFbxPoly < fbxPolyCount; ++iFbxPoly)
-                                {
-                                    int polySize = fbxMesh->GetPolygonSize(iFbxPoly);
-                                    if (polygonMasks[iFbxPoly])
-                                    {
-                                        for (int iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex, ++fbxIndexByPolyVertex, ++actualIndexByPolyVertex)
-                                        {
-                                            // do not reverse polygon order
-                                            uvIndex = fbxIndexByPolyVertex;
-                                            if (!uvReferenceDirect)
-                                            {
-                                                uvIndex = uvElement->GetIndexArray().GetAt(uvIndex);
-                                            }
-
-                                            FbxVector2 tempUV(uvElement->GetDirectArray().GetAt(uvIndex));
-                                            uvs[actualIndexByPolyVertex].Set((float)tempUV[0], (float)tempUV[1]);
-                                        } // iPolyVertex
-                                    }
-                                    else
-                                    {
-                                        fbxIndexByPolyVertex += polySize;
-                                    }
-                                } // iPoly
+                                vertexMask = 0;
                             }
                         }
                     }
-                    else if (outputData._geoType == glm::crowdio::GeometryType::GCG)
+
+                    int iActualVertex = 0;
+                    for (unsigned int iFbxVertex = 0; iFbxVertex < fbxVertexCount; ++iFbxVertex)
                     {
-                        glm::crowdio::GlmFileMeshTransform& assetFileMeshTransform = gcgCharacter->getGeometry()._transforms[outputData._transformIndicesInGcgFile[iRenderMesh]];
-                        glm::crowdio::GlmFileMesh& assetFileMesh = gcgCharacter->getGeometry()._meshes[assetFileMeshTransform._meshIndex];
-
-                        meshTemplateData.pointsCount = assetFileMesh._vertexCount;
-
-                        for (uint32_t iPoly = 0, iVertex = 0; iPoly < assetFileMesh._polygonCount; ++iPoly)
+                        int& vertexMask = vertexMasks[iFbxVertex];
+                        if (vertexMask >= 0)
                         {
-                            uint32_t polySize = assetFileMesh._polygonsVertexCount[iPoly];
+                            vertexMask = iActualVertex;
+                            ++iActualVertex;
+                        }
+                    }
+
+                    meshTemplateData.pointsCount = iActualVertex;
+
+                    for (unsigned int iFbxPoly = 0; iFbxPoly < fbxPolyCount; ++iFbxPoly)
+                    {
+                        if (polygonMasks[iFbxPoly])
+                        {
+                            int polySize = fbxMesh->GetPolygonSize(iFbxPoly);
                             meshTemplateData.faceVertexCounts.push_back(polySize);
-                            for (uint32_t iPolyVtx = 0; iPolyVtx < polySize; ++iPolyVtx, ++iVertex)
+                            for (int iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex)
                             {
                                 // do not reverse polygon order
-                                int vertexId = assetFileMesh._polygonsVertexIndices[iVertex];
+                                int iFbxVertex = fbxMesh->GetPolygonVertex(iFbxPoly, iPolyVertex);
+                                int vertexId = vertexMasks[iFbxVertex];
                                 meshTemplateData.faceVertexIndices.push_back(vertexId);
-                            }
-                        }
-
-                        meshTemplateData.uvSets.resize(assetFileMesh._uvSetCount);
-                        for (size_t iUVSet = 0; iUVSet < assetFileMesh._uvSetCount; ++iUVSet)
-                        {
-                            VtVec2fArray& uvs = meshTemplateData.uvSets[iUVSet];
-                            uvs.resize(meshTemplateData.faceVertexIndices.size());
-
-                            if (assetFileMesh._uvMode == glm::crowdio::GLM_UV_PER_CONTROL_POINT)
-                            {
-                                for (uint32_t iPoly = 0, iVertex = 0; iPoly < assetFileMesh._polygonCount; ++iPoly)
-                                {
-                                    uint32_t polySize = assetFileMesh._polygonsVertexCount[iPoly];
-                                    for (uint32_t iPolyVtx = 0; iPolyVtx < polySize; ++iPolyVtx, ++iVertex)
-                                    {
-                                        // do not reverse polygon order
-                                        uint32_t uvIndex = assetFileMesh._polygonsVertexIndices[iVertex];
-                                        uvs[iVertex].Set(assetFileMesh._us[iUVSet][uvIndex], assetFileMesh._vs[iUVSet][uvIndex]);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                for (uint32_t iPoly = 0, iVertex = 0; iPoly < assetFileMesh._polygonCount; ++iPoly)
-                                {
-                                    uint32_t polySize = assetFileMesh._polygonsVertexCount[iPoly];
-                                    for (uint32_t iPolyVtx = 0; iPolyVtx < polySize; ++iPolyVtx, ++iVertex)
-                                    {
-                                        // do not reverse polygon order
-                                        uint32_t uvIndex = assetFileMesh._polygonsUVIndices[iVertex];
-                                        uvs[iVertex].Set(assetFileMesh._us[iUVSet][uvIndex], assetFileMesh._vs[iUVSet][uvIndex]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    int shadingGroupIdx = outputData._meshShadingGroups[iRenderMesh];
-
-                    glm::GlmString materialName = "";
-                    if (shadingGroupIdx >= 0)
-                    {
-                        const glm::ShadingGroup& shGroup = inputGeoData._character->_shadingGroups[shadingGroupIdx];
-                        materialName = materialPath;
-                        materialName.rtrim("/");
-                        materialName += "/";
-                        switch (materialAssignMode)
-                        {
-                        case GolaemMaterialAssignMode::BY_SHADING_GROUP:
-                        {
-                            materialName += TfMakeValidIdentifier(shGroup._name.c_str());
-                        }
-                        break;
-                        case GolaemMaterialAssignMode::BY_SURFACE_SHADER:
-                        {
-                            // get the surface shader
-                            int shaderAssetIdx = shadingGroupToSurfaceShader[shadingGroupIdx];
-                            if (shaderAssetIdx >= 0)
-                            {
-                                const glm::ShaderAsset& shAsset = inputGeoData._character->_shaderAssets[shaderAssetIdx];
-                                materialName += TfMakeValidIdentifier(shAsset._name.c_str());
-                            }
-                            else
-                            {
-                                materialName += "DefaultGolaemMat";
-                            }
-                        }
-                        break;
-                        default:
-                            break;
+                            } // iPolyVertex
                         }
                     }
 
-                    if (materialAssignMode != GolaemMaterialAssignMode::NO_ASSIGNMENT)
+                    // find how many uv layers are available
+                    int uvSetCount = fbxMesh->GetLayerCount(FbxLayerElement::eUV);
+                    meshTemplateData.uvSets.resize(uvSetCount);
+                    FbxLayerElementUV* uvElement = NULL;
+                    for (int iUVSet = 0; iUVSet < uvSetCount; ++iUVSet)
                     {
-                        if (!materialName.empty())
+                        VtVec2fArray& uvs = meshTemplateData.uvSets[iUVSet];
+                        uvs.resize(meshTemplateData.faceVertexIndices.size());
+                        FbxLayer* layer = fbxMesh->GetLayer(fbxMesh->GetLayerTypedIndex((int)iUVSet, FbxLayerElement::eUV));
+                        uvElement = layer->GetUVs();
+                        bool uvsByControlPoint = uvElement->GetMappingMode() == FbxLayerElement::eByControlPoint;
+                        bool uvReferenceDirect = uvElement->GetReferenceMode() == FbxLayerElement::eDirect;
+
+                        if (uvsByControlPoint)
                         {
-                            meshTemplateData.materialPath = SdfPathListOp::CreateExplicit({SdfPath(materialName.c_str())});
+                            int uvIndex = 0;
+                            for (unsigned int iFbxPoly = 0, actualIndexByPolyVertex = 0; iFbxPoly < fbxPolyCount; ++iFbxPoly)
+                            {
+                                int polySize = fbxMesh->GetPolygonSize(iFbxPoly);
+                                if (polygonMasks[iFbxPoly])
+                                {
+                                    for (int iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex, ++actualIndexByPolyVertex)
+                                    {
+                                        // do not reverse polygon order
+                                        uvIndex = vertexMasks[fbxMesh->GetPolygonVertex(iFbxPoly, iPolyVertex)];
+                                        if (!uvReferenceDirect)
+                                        {
+                                            uvIndex = uvElement->GetIndexArray().GetAt(uvIndex);
+                                        }
+                                        FbxVector2 tempUV(uvElement->GetDirectArray().GetAt(uvIndex));
+                                        uvs[actualIndexByPolyVertex].Set((float)tempUV[0], (float)tempUV[1]);
+                                    }
+                                }
+                            }
                         }
                         else
                         {
-                            meshTemplateData.materialPath = (*_skinMeshRelationships)[_skinMeshRelationshipTokens->materialBinding].defaultTargetPath;
+                            int uvIndex = 0;
+                            for (unsigned int iFbxPoly = 0, actualIndexByPolyVertex = 0, fbxIndexByPolyVertex = 0; iFbxPoly < fbxPolyCount; ++iFbxPoly)
+                            {
+                                int polySize = fbxMesh->GetPolygonSize(iFbxPoly);
+                                if (polygonMasks[iFbxPoly])
+                                {
+                                    for (int iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex, ++fbxIndexByPolyVertex, ++actualIndexByPolyVertex)
+                                    {
+                                        // do not reverse polygon order
+                                        uvIndex = fbxIndexByPolyVertex;
+                                        if (!uvReferenceDirect)
+                                        {
+                                            uvIndex = uvElement->GetIndexArray().GetAt(uvIndex);
+                                        }
+
+                                        FbxVector2 tempUV(uvElement->GetDirectArray().GetAt(uvIndex));
+                                        uvs[actualIndexByPolyVertex].Set((float)tempUV[0], (float)tempUV[1]);
+                                    } // iPolyVertex
+                                }
+                                else
+                                {
+                                    fbxIndexByPolyVertex += polySize;
+                                }
+                            } // iPoly
                         }
+                    }
+                }
+                else if (outputData._geoType == glm::crowdio::GeometryType::GCG)
+                {
+                    crowdio::CrowdGcgCharacter* gcgCharacter = outputData._gcgCharacters[0];
+
+                    glm::crowdio::GlmFileMeshTransform& assetFileMeshTransform = gcgCharacter->getGeometry()._transforms[outputData._transformIndicesInGcgFile[iRenderMesh]];
+                    glm::crowdio::GlmFileMesh& assetFileMesh = gcgCharacter->getGeometry()._meshes[assetFileMeshTransform._meshIndex];
+
+                    meshTemplateData.pointsCount = assetFileMesh._vertexCount;
+
+                    for (uint32_t iPoly = 0, iVertex = 0; iPoly < assetFileMesh._polygonCount; ++iPoly)
+                    {
+                        uint32_t polySize = assetFileMesh._polygonsVertexCount[iPoly];
+                        meshTemplateData.faceVertexCounts.push_back(polySize);
+                        for (uint32_t iPolyVtx = 0; iPolyVtx < polySize; ++iPolyVtx, ++iVertex)
+                        {
+                            // do not reverse polygon order
+                            int vertexId = assetFileMesh._polygonsVertexIndices[iVertex];
+                            meshTemplateData.faceVertexIndices.push_back(vertexId);
+                        }
+                    }
+
+                    meshTemplateData.uvSets.resize(assetFileMesh._uvSetCount);
+                    for (size_t iUVSet = 0; iUVSet < assetFileMesh._uvSetCount; ++iUVSet)
+                    {
+                        VtVec2fArray& uvs = meshTemplateData.uvSets[iUVSet];
+                        uvs.resize(meshTemplateData.faceVertexIndices.size());
+
+                        if (assetFileMesh._uvMode == glm::crowdio::GLM_UV_PER_CONTROL_POINT)
+                        {
+                            for (uint32_t iPoly = 0, iVertex = 0; iPoly < assetFileMesh._polygonCount; ++iPoly)
+                            {
+                                uint32_t polySize = assetFileMesh._polygonsVertexCount[iPoly];
+                                for (uint32_t iPolyVtx = 0; iPolyVtx < polySize; ++iPolyVtx, ++iVertex)
+                                {
+                                    // do not reverse polygon order
+                                    uint32_t uvIndex = assetFileMesh._polygonsVertexIndices[iVertex];
+                                    uvs[iVertex].Set(assetFileMesh._us[iUVSet][uvIndex], assetFileMesh._vs[iUVSet][uvIndex]);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for (uint32_t iPoly = 0, iVertex = 0; iPoly < assetFileMesh._polygonCount; ++iPoly)
+                            {
+                                uint32_t polySize = assetFileMesh._polygonsVertexCount[iPoly];
+                                for (uint32_t iPolyVtx = 0; iPolyVtx < polySize; ++iPolyVtx, ++iVertex)
+                                {
+                                    // do not reverse polygon order
+                                    uint32_t uvIndex = assetFileMesh._polygonsUVIndices[iVertex];
+                                    uvs[iVertex].Set(assetFileMesh._us[iUVSet][uvIndex], assetFileMesh._vs[iUVSet][uvIndex]);
+                                }
+                            }
+                        }
+                    }
+                }
+                int shadingGroupIdx = outputData._meshShadingGroups[iRenderMesh];
+
+                glm::GlmString materialName = "";
+                if (shadingGroupIdx >= 0)
+                {
+                    const glm::ShadingGroup& shGroup = inputGeoData._character->_shadingGroups[shadingGroupIdx];
+                    materialName = materialPath;
+                    materialName.rtrim("/");
+                    materialName += "/";
+                    switch (materialAssignMode)
+                    {
+                    case GolaemMaterialAssignMode::BY_SHADING_GROUP:
+                    {
+                        materialName += TfMakeValidIdentifier(shGroup._name.c_str());
+                    }
+                    break;
+                    case GolaemMaterialAssignMode::BY_SURFACE_SHADER:
+                    {
+                        // get the surface shader
+                        int shaderAssetIdx = shadingGroupToSurfaceShader[shadingGroupIdx];
+                        if (shaderAssetIdx >= 0)
+                        {
+                            const glm::ShaderAsset& shAsset = inputGeoData._character->_shaderAssets[shaderAssetIdx];
+                            materialName += TfMakeValidIdentifier(shAsset._name.c_str());
+                        }
+                        else
+                        {
+                            materialName += "DefaultGolaemMat";
+                        }
+                    }
+                    break;
+                    default:
+                        break;
+                    }
+                }
+
+                if (materialAssignMode != GolaemMaterialAssignMode::NO_ASSIGNMENT)
+                {
+                    if (!materialName.empty())
+                    {
+                        meshTemplateData.materialPath = SdfPathListOp::CreateExplicit({SdfPath(materialName.c_str())});
+                    }
+                    else
+                    {
+                        meshTemplateData.materialPath = (*_skinMeshRelationships)[_skinMeshRelationshipTokens->materialBinding].defaultTargetPath;
                     }
                 }
             }
