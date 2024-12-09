@@ -40,6 +40,7 @@ namespace glm
 
                 glm::Singleton<USDLogger>::create();
 
+                glm::crowdio::setupGolaemProduct("GolaemForUsd", "");
                 glm::crowdio::init();
             }
             ++s_initCount;
