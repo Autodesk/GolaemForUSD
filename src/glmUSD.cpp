@@ -11,6 +11,7 @@
 #include <glmCore.h>
 #include <glmStringOperators.h>
 #include <glmCrowdIO.h>
+#include "glmADP.h"
 #include <glmMutex.h>
 #include <glmScopedLock.h>
 #include <glmProductInformation.h>
@@ -42,6 +43,7 @@ namespace glm
 
                 glm::crowdio::setupGolaemProduct("GolaemForUsd", "");
                 glm::crowdio::init();
+                glm::crowdio::displayADPDialog("en", true, NULL);
             }
             ++s_initCount;
             return s_initCount;
