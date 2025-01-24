@@ -1,0 +1,43 @@
+GOLAEM 7.2.3 - CHANGELOG - February 28th 2020
+---------------------------------------------
+
+** To Sort before next tag
+- GolaemForKatana: added support for usd in Katana 3.5
+- Open sourced USD plugin code
+
+
+** Supported Rendering Engine
+
+- USD (beta) - Standalone 0.19.11 / For Houdini 18 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 7.2.2 - CHANGELOG - February 10th 2020
+------------------------------------------------------
+
+** Improvements
+
+- Added Golaem and PPAttr in the transform of each Entity
+- Added namespace and PPAttr (glmAttributeNamespace)
+- Added support for Houdini 18
+
+
+** Supported Rendering Engine
+
+- USD (beta) - Standalone 0.19.11 / For Houdini 18
+
+
+
+
+GOLAEM FOR USD 7.2.1 - CHANGELOG - January 15th 2020
+------------------------------------------------------
+
+** New features
+
+- New Golaem procedural plugin for USD 0.19.11
+
+
+** Supported Rendering Engines
+
+- USD (beta) - Standalone 0.19.11

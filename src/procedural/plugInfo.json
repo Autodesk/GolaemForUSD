@@ -1,0 +1,37 @@
+{
+    "Plugins": [
+        {
+            "Info": {
+                "SdfMetadata": {
+                    "GolaemUSD_Params": {
+                        "type": "dictionary",
+                        "displayGroup": "Core",
+                        "appliesTo": [
+                            "prims"
+                        ],
+                        "documentation:": "All the golaem parameters as a dictionary."
+                    }
+                },
+                "Types": {
+                    "glm::usdplugin::GolaemUSDFileFormat": {
+                        "bases": [
+                            "SdfFileFormat"
+                        ],
+                        "displayName": "Golaem USD",
+                        "extensions": [
+                            "glmusd"
+                        ],
+                        "formatId": "glmUsdFormat",
+                        "primary": true,
+                        "target": "usd"
+                    }
+                }
+            },
+            "LibraryPath": "@GOLAEMUSD_LIBRARY_PATH@",
+            "Name": "glmUsdFormat",
+            "ResourcePath": "resources",
+            "Root": ".",
+            "Type": "library"
+        }
+    ]
+}
