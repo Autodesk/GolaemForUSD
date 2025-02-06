@@ -21,7 +21,7 @@ namespace glm
             crowdio::getGolaemAPIVersion(glmAPIVersion);
             static ProductInformation glmProductInformation(
                 GLM_USDPLUGIN_NAME,
-                GLM_USDPLUGIN_DESCRIPTION,
+                GLM_USDPLUGIN_DESCRIPTION ". " GLM_COPYRIGHT_TEXT,
                 glmAPIVersion[crowdio::GolaemVersion::MAIN_VERSION],
                 glmAPIVersion[crowdio::GolaemVersion::MAJOR_VERSION],
                 glmAPIVersion[crowdio::GolaemVersion::MINOR_VERSION],
