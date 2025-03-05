@@ -7,7 +7,9 @@ Thus, it avoids baking out geometry, handles geometry and shading variation and 
 
 ###
 ## License
-TODO (LICENSE).
+Golaem For USD is licensed under Apache 2.0
+
+See [license file](LICENSE.md)
 
 ###
 ## Prerequisites
