@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <glmCoreVersion.h>
+#define GLM_COPYRIGHT_TEXT "Copyright (C) Autodesk, Inc. All Rights Reserved."
 
 //description of the component
 #define GLM_USDPLUGIN_NAME "GolaemUSDPlugin"
