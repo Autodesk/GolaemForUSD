@@ -1886,6 +1886,15 @@ namespace glm
                 }
 
                 glm::crowdio::CachedSimulation& cachedSimulation = _factory->getCachedSimulation(cacheDir.c_str(), cacheName.c_str(), glmCfName.c_str());
+                const crowdio::glmHistoryRuntimeStructure* historyRuntime = cachedSimulation.getHistoryRuntimeStructure(_factory->getLayoutHistoryCount() - 1);
+
+                GlmSet<int64_t> emptySet;
+                const GlmSet<int64_t>* entitiesAffectedByPermanentKill = &emptySet;
+
+                if (historyRuntime != NULL)
+                {
+                    entitiesAffectedByPermanentKill = &historyRuntime->_entitiesAffectedByPermanentKill;
+                }
 
                 int firstFrameInCache, lastFrameInCache;
                 cachedSimulation.getSrcFrameRangeAvailableOnDisk(firstFrameInCache, lastFrameInCache);
@@ -1933,6 +1942,18 @@ namespace glm
                         continue;
                     }
 
+                    const glm::crowdio::GlmFrameData* firstFrameData = cachedSimulation.getFinalFrameData(firstFrameInCache, UINT32_MAX, true);
+
+                    int32_t entityToBakeIndex = simuData->_entityToBakeIndex[iEntity];
+                    GLM_DEBUG_ASSERT(entityToBakeIndex >= 0);
+
+                    // filter permanently killed entities
+                    if (firstFrameData->_entityEnabled[entityToBakeIndex] == 0 &&
+                        entitiesAffectedByPermanentKill->find(entityId) != entitiesAffectedByPermanentKill->end())
+                    {
+                        continue;
+                    }
+
                     glm::GlmString entityName = "Entity_" + glm::toString(entityId);
                     TfToken entityNameToken = TfToken(entityName.c_str());
                     SdfPath entityPath = cfPath.AppendChild(entityNameToken);
@@ -1962,13 +1983,12 @@ namespace glm
                     entityData->inputGeoData._entityId = entityId;
                     entityData->inputGeoData._entityIndex = iEntity;
                     entityData->inputGeoData._simuData = simuData;
-                    entityData->inputGeoData._entityToBakeIndex = simuData->_entityToBakeIndex[iEntity];
-                    GLM_DEBUG_ASSERT(entityData->inputGeoData._entityToBakeIndex >= 0);
+                    entityData->inputGeoData._entityToBakeIndex = entityToBakeIndex;
 
                     entityData->inputGeoData._frames.resize(1);
                     entityData->inputGeoData._frames[0] = firstFrameInCache;
                     entityData->inputGeoData._frameDatas.resize(1);
-                    entityData->inputGeoData._frameDatas[0] = cachedSimulation.getFinalFrameData(firstFrameInCache, UINT32_MAX, true);
+                    entityData->inputGeoData._frameDatas[0] = firstFrameData;
 
                     entityData->computedTimeSample = firstFrameInCache - 1; // ensure there will be a compute in QueryTimeSample
 
