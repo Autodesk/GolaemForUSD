@@ -1886,7 +1886,7 @@ namespace glm
                 }
 
                 glm::crowdio::CachedSimulation& cachedSimulation = _factory->getCachedSimulation(cacheDir.c_str(), cacheName.c_str(), glmCfName.c_str());
-                const crowdio::glmHistoryRuntimeStructure* historyRuntime = NULL;
+                const crowdio::glmHistoryRuntimeStructure* historyRuntime = nullptr;
                 if (enableLayout && _factory->getLayoutHistoryCount() > 0)
                 {
                     historyRuntime = cachedSimulation.getHistoryRuntimeStructure(_factory->getLayoutHistoryCount() - 1);
@@ -1895,7 +1895,7 @@ namespace glm
                 GlmSet<int64_t> emptySet;
                 const GlmSet<int64_t>* entitiesAffectedByPermanentKill = &emptySet;
 
-                if (historyRuntime != NULL)
+                if (historyRuntime != nullptr)
                 {
                     entitiesAffectedByPermanentKill = &historyRuntime->_entitiesAffectedByPermanentKill;
                 }
