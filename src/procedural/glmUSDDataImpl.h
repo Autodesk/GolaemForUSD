@@ -116,6 +116,7 @@ namespace glm
                 VtVec3fArray defaultVelocities;
                 // int normalsCount; // not needed, = faceVertexIndices.size();
                 SdfPathListOp materialPath;
+                int velocitiesIntShaderAttributeIndex = -1; // index of the enableUsdVelocities int attribute if found, -1 otherwise
             };
 
             struct SkinMeshData : public glm::ReferenceCounter
@@ -172,6 +173,7 @@ namespace glm
                 typedef SmartPointer<SkinMeshEntityFrameData> SP;
 
                 glm::Array<SkinMeshLodData::SP> meshLodData;
+                bool velocitiesComputed = false;
             };
 
             struct SkinMeshEntityData : public EntityData
@@ -179,6 +181,7 @@ namespace glm
                 typedef SmartPointer<SkinMeshEntityData> SP;
 
                 glm::PODArray<int> lodEnabled; // useful when using static lod
+                bool computeVelocities = false;
             };
 
             struct SkelEntityData : public EntityData
@@ -288,7 +291,7 @@ namespace glm
 
             glm::PODArray<glm::Mutex*> _cachedSimulationLocks;
 
-            glm::Array<glm::Array<PODArray<size_t>>> _globalToSpecificShaderAttrIdxPerCharPerCrowdField;
+            glm::Array<PODArray<size_t>> _globalToSpecificShaderAttrIdxPerChar;
 
             UsdWrapper _usdWrapper;
 
@@ -367,9 +370,7 @@ namespace glm
             SdfPath _CreateHierarchyFor(const glm::GlmString& hierarchy, const SdfPath& parentPath, GlmMap<GlmString, SdfPath>& existingPaths);
             SkelEntityFrameData::SP _ComputeSkelEntity(EntityData::SP entityData, double frame);
             SkinMeshEntityFrameData::SP _ComputeSkinMeshEntity(EntityData::SP entityData, double frame);
-            bool _ComputeMeshVelocities(
-                EntityData::SP entityData, double frame, size_t lodLevel,
-                SkinMeshData::SP meshData, const std::pair<int, int>& meshKey) const;
+            void _ComputeEntityVelocities(SkinMeshEntityFrameData::SP currentFrameData, SkinMeshEntityFrameData::SP prevFrameData);
             bool _ComputeFurVelocities(
                 EntityData::SP entityData, double frame, size_t lodLevel,
                 FurData::SP furData, int furAssetIndex) const;
@@ -434,10 +435,18 @@ namespace glm
             {
                 frameData = new FrameDataType();
 
-                // remove the oldest frame data if we exceed cachedFramesCount
+                // remove the furthest frame data if we reached the maximum number of cached frames, then add the new one
                 if (frameDataMap.size() >= cachedFramesCount)
                 {
-                    frameDataMap.erase(frameDataMap.begin());
+                    auto itFurthestFrame = frameDataMap.begin();
+                    for (auto it = frameDataMap.begin(); it != frameDataMap.end(); ++it)
+                    {
+                        if (std::abs(it.getKey() - frame) > std::abs(itFurthestFrame.getKey() - frame))
+                        {
+                            itFurthestFrame = it;
+                }
+                    }
+                    frameDataMap.erase(itFurthestFrame);
                 }
                 frameDataMap[frame] = frameData;
             }

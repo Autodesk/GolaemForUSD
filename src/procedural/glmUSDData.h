@@ -53,7 +53,6 @@ namespace glm
     xx(short, glmLodMode, 0)                        \
     xx(GfVec3f, glmCameraPos, 0)                    \
     xx(int, glmCachedFramesCount, 3)                \
-    xx(bool, glmComputeVelocities, false)           \
     xx(bool, glmEnableFur, false)                   \
     xx(float, glmFurRenderPercent, 100.f)           \
     xx(TfToken, glmProceduralFile, "")
@@ -85,7 +84,6 @@ namespace glm
     (glmLodMode)                        \
     (glmCameraPos)                      \
     (glmCachedFramesCount)              \
-    (glmComputeVelocities)              \
     (glmEnableFur)                      \
     (glmFurRenderPercent)               \
     (glmProceduralFile)
