@@ -3858,12 +3858,12 @@ namespace glm
 
             int velocitiesShaderAttributeIndex = inputGeoData._character->findShaderAttributeIdx("glmEnableUsdVelocities");
             int velocitiesIntShaderAttributeIndex = -1;
-            if (velocitiesShaderAttributeIndex >= 0 && inputGeoData._characterIdx < _globalToSpecificShaderAttrIdxPerChar.size())
+            if (velocitiesShaderAttributeIndex >= 0 && static_cast<size_t>(inputGeoData._characterIdx) < _globalToSpecificShaderAttrIdxPerChar.size())
             {
                 const glm::ShaderAttribute& shaderAttribute = inputGeoData._character->_shaderAttributes[velocitiesShaderAttributeIndex];
                 if (shaderAttribute._type == ShaderAttributeType::INT)
                 {
-                    const PODArray<size_t>& globalToSpecificShaderAttrIdx = _globalToSpecificShaderAttrIdxPerChar[inputGeoData._characterIdx]; // no bounds check needed, characters are consistent across crowd fields
+                    const PODArray<size_t>& globalToSpecificShaderAttrIdx = _globalToSpecificShaderAttrIdxPerChar[inputGeoData._characterIdx];
                     if (static_cast<size_t>(velocitiesShaderAttributeIndex) < globalToSpecificShaderAttrIdx.size())
                     {
                         velocitiesIntShaderAttributeIndex = static_cast<int>(globalToSpecificShaderAttrIdx[velocitiesShaderAttributeIndex]);
