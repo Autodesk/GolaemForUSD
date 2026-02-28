@@ -24,6 +24,13 @@
                         "formatId": "glmUsdFormat",
                         "primary": true,
                         "target": "usd"
+                    },
+                    "GolaemProceduralPlugin": {
+                        "bases": [
+                            "HdGpGenerativeProceduralPlugin"
+                        ],
+                        "displayName": "GolaemHydra",
+                        "priority": 0
                     }
                 }
             },
