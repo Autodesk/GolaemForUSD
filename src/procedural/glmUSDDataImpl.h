@@ -142,6 +142,7 @@ namespace glm
                 VtFloatArray unscaledWidths;
                 VtVec3fArray defaultVelocities;
                 SdfPathListOp materialPath;
+                int velocitiesIntShaderAttributeIndex = -1; // index of the enableUsdVelocities int attribute if found, -1 otherwise
                 TfToken curveDegree;
                 std::map<TfToken, VtFloatArray, TfTokenFastArbitraryLessThan> floatProperties;
                 std::map<TfToken, VtVec3fArray, TfTokenFastArbitraryLessThan> vector3Properties;
@@ -371,15 +372,17 @@ namespace glm
             SkelEntityFrameData::SP _ComputeSkelEntity(EntityData::SP entityData, double frame);
             SkinMeshEntityFrameData::SP _ComputeSkinMeshEntity(EntityData::SP entityData, double frame);
             void _ComputeEntityVelocities(SkinMeshEntityFrameData::SP currentFrameData, SkinMeshEntityFrameData::SP prevFrameData);
-            bool _ComputeFurVelocities(
-                EntityData::SP entityData, double frame, size_t lodLevel,
-                FurData::SP furData, int furAssetIndex) const;
             SkinMeshLodData::SP _GetMeshLodDataAtFrame(
                 EntityData::SP entityData, double frame, size_t lodLevel) const;
             void _ComputeEntity(EntityFrameData::SP entityFrameData, double frame);
             void _InvalidateEntity(EntityFrameData::SP entityFrameData);
             void _getCharacterExtent(EntityData::SP entityData, GfVec3f& extent) const;
             void _ComputeBboxData(SkinMeshEntityData::SP entityData);
+            void _FindEnableVelocitiesShaderAttribute(
+                const GolaemCharacter* character,
+                int characterIdx,
+                int& outVelocitiesShaderAttributeIndex,
+                int& outVelocitiesIntShaderAttributeIndex);
             void _ComputeSkinMeshTemplateData(
                 std::map<std::pair<int, int>, SkinMeshTemplateData::SP>& lodTemplateData,
                 const glm::crowdio::InputEntityGeoData& inputGeoData,
@@ -400,10 +403,7 @@ namespace glm
                 EntityData::SP entityData,
                 size_t lodIndex,
                 const std::map<int, FurTemplateData::SP>& templateDataPerFur);
-            GlmString _GetMaterialForShadingGroup(
-                const GolaemCharacter *character, int characterIdx,
-                int shadingGroupIdx) const;
-
+            GlmString _GetMaterialForShadingGroup(const GolaemCharacter* character, const ShadingGroup& shGroup, int characterIdx, int shadingGroupIdx) const;
             bool _QueryEntityAttributes(EntityFrameData::SP entityFrameData, const TfToken& nameToken, VtValue* value);
         };
 
@@ -444,7 +444,7 @@ namespace glm
                         if (std::abs(it.getKey() - frame) > std::abs(itFurthestFrame.getKey() - frame))
                         {
                             itFurthestFrame = it;
-                }
+                        }
                     }
                     frameDataMap.erase(itFurthestFrame);
                 }
