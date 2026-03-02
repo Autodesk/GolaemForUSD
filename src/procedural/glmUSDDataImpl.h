@@ -142,10 +142,10 @@ namespace glm
                 VtFloatArray unscaledWidths;
                 VtVec3fArray defaultVelocities;
                 SdfPathListOp materialPath;
-                int velocitiesIntShaderAttributeIndex = -1; // index of the enableUsdVelocities int attribute if found, -1 otherwise
-                TfToken curveDegree;
+                TfToken curveType; // "linear" or "cubic"
                 std::map<TfToken, VtFloatArray, TfTokenFastArbitraryLessThan> floatProperties;
                 std::map<TfToken, VtVec3fArray, TfTokenFastArbitraryLessThan> vector3Properties;
+                int velocitiesIntShaderAttributeIndex = -1; // index of the enableUsdVelocities int attribute if found, -1 otherwise
             };
 
             struct FurData : public glm::ReferenceCounter
@@ -153,10 +153,16 @@ namespace glm
                 typedef SmartPointer<FurData> SP;
 
                 VtVec3fArray points;
-                VtFloatArray widths;
                 VtVec3fArray velocities;
 
                 FurTemplateData::SP templateData;
+            };
+
+            struct FurStaticData : public glm::ReferenceCounter
+            {
+                typedef SmartPointer<FurStaticData> SP;
+
+                VtFloatArray scaledWidths;
             };
 
             struct SkinMeshLodData : public glm::ReferenceCounter
@@ -226,10 +232,11 @@ namespace glm
 
             struct FurMapData
             {
-                EntityData::SP entityData;
+                SkinMeshEntityData::SP entityData;
                 size_t lodIndex;
                 int furAssetIndex;
                 FurTemplateData::SP templateData;
+                FurStaticData::SP staticData;
             };
 
             struct UsdWrapper
@@ -264,6 +271,8 @@ namespace glm
 
             glm::Array<TfToken> _ppAttrTypes;
             glm::Array<VtValue> _ppAttrDefaultValues;
+
+            glm::Array<TfToken> _furPropertyTypes;
 
             int _startFrame;
             int _endFrame;
@@ -300,7 +309,6 @@ namespace glm
 
             SdfPath _rootPathInFinalStage;
             int _rootNodeIdInFinalStage = -1;
-            int _furCurveIncr = 1;
 
         public:
             GolaemUSD_DataImpl(const GolaemUSD_DataParams& params);
@@ -372,8 +380,6 @@ namespace glm
             SkelEntityFrameData::SP _ComputeSkelEntity(EntityData::SP entityData, double frame);
             SkinMeshEntityFrameData::SP _ComputeSkinMeshEntity(EntityData::SP entityData, double frame);
             void _ComputeEntityVelocities(SkinMeshEntityFrameData::SP currentFrameData, SkinMeshEntityFrameData::SP prevFrameData);
-            SkinMeshLodData::SP _GetMeshLodDataAtFrame(
-                EntityData::SP entityData, double frame, size_t lodLevel) const;
             void _ComputeEntity(EntityFrameData::SP entityFrameData, double frame);
             void _InvalidateEntity(EntityFrameData::SP entityFrameData);
             void _getCharacterExtent(EntityData::SP entityData, GfVec3f& extent) const;
@@ -400,7 +406,7 @@ namespace glm
                 const glm::crowdio::OutputEntityGeoData& outputData);
             void _InitFurData(
                 const SdfPath& parentPath,
-                EntityData::SP entityData,
+                SkinMeshEntityData::SP entityData,
                 size_t lodIndex,
                 const std::map<int, FurTemplateData::SP>& templateDataPerFur);
             GlmString _GetMaterialForShadingGroup(const GolaemCharacter* character, const ShadingGroup& shGroup, int characterIdx, int shadingGroupIdx) const;

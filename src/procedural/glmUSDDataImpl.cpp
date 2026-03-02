@@ -316,6 +316,8 @@ namespace glm
 
             (*_furProperties)[_furPropertyTokens->widths].defaultValue = VtValue(VtFloatArray());
             (*_furProperties)[_furPropertyTokens->widths].isAnimated = false;
+            (*_furProperties)[_furPropertyTokens->widths].hasInterpolation = true;
+            (*_furProperties)[_furPropertyTokens->widths].interpolation = UsdGeomTokens->vertex;
 
             (*_furProperties)[_furPropertyTokens->curveVertexCounts].defaultValue = VtValue(VtIntArray());
             (*_furProperties)[_furPropertyTokens->curveVertexCounts].isAnimated = false;
@@ -328,6 +330,8 @@ namespace glm
 
             (*_furProperties)[_furPropertyTokens->uvs].defaultValue = VtValue(VtVec2fArray());
             (*_furProperties)[_furPropertyTokens->uvs].isAnimated = false;
+            (*_furProperties)[_furPropertyTokens->uvs].hasInterpolation = true;
+            (*_furProperties)[_furPropertyTokens->uvs].interpolation = UsdGeomTokens->vertex;
 
             // Use the schema to derive the type name tokens from each property's
             // default value.
@@ -453,7 +457,7 @@ namespace glm
                 _shaderAttrDefaultValues[ShaderAttributeType::INT] = value;
             }
             {
-                float floatValue = 0.1f;
+                float floatValue = 0.f;
                 VtValue value(floatValue);
                 _shaderAttrTypes[ShaderAttributeType::FLOAT] = SdfSchema::GetInstance().FindType(value).GetAsToken();
                 _shaderAttrDefaultValues[ShaderAttributeType::FLOAT] = value;
@@ -474,7 +478,7 @@ namespace glm
             _ppAttrTypes.resize(2);
             _ppAttrDefaultValues.resize(2);
             {
-                float floatValue = 0.1f;
+                float floatValue = 0.f;
                 VtValue value(floatValue);
                 int attrTypeIdx = crowdio::GSC_PP_FLOAT - 1; // enum starts at 1
                 _ppAttrTypes[attrTypeIdx] = SdfSchema::GetInstance().FindType(value).GetAsToken();
@@ -487,6 +491,19 @@ namespace glm
                 _ppAttrTypes[attrTypeIdx] = SdfSchema::GetInstance().FindType(value).GetAsToken();
                 _ppAttrDefaultValues[attrTypeIdx] = value;
             }
+
+            _furPropertyTypes.resize(2);
+            {
+                VtFloatArray floatArrayValue;
+                VtValue value(floatArrayValue);
+                _furPropertyTypes[0] = SdfSchema::GetInstance().FindType(value).GetAsToken();
+            }
+            {
+                VtVec3fArray vectorArrayValue;
+                VtValue value(vectorArrayValue);
+                _furPropertyTypes[1] = SdfSchema::GetInstance().FindType(value).GetAsToken();
+            }
+
             _InitFromParams();
         }
 
@@ -1275,7 +1292,7 @@ namespace glm
                             if (TfMapLookupPtr(furMapData->templateData->floatProperties, nameToken) ||
                                 TfMapLookupPtr(furMapData->templateData->vector3Properties, nameToken))
                             {
-                                return nonAnimPropFields;
+                                return nonAnimInterpPropFields; // custom fur properties have uniform interpolation but are not animated
                             }
                             if (TfMapLookupPtr(*_furRelationships, nameToken))
                             {
@@ -1737,7 +1754,7 @@ namespace glm
                                 }
                             }
                         }
-                        else
+                        else // isFurPath
                         {
                             FurData::SP furData = meshLodData->furData.at(furAssetIndex);
                             if (furData)
@@ -1745,10 +1762,6 @@ namespace glm
                                 if (nameToken == _furPropertyTokens->points)
                                 {
                                     RETURN_TRUE_WITH_OPTIONAL_VALUE(furData->points);
-                                }
-                                if (nameToken == _furPropertyTokens->widths)
-                                {
-                                    RETURN_TRUE_WITH_OPTIONAL_VALUE(furData->widths);
                                 }
                                 if (nameToken == _furPropertyTokens->velocities)
                                 {
@@ -1786,7 +1799,7 @@ namespace glm
                                 RETURN_TRUE_WITH_OPTIONAL_VALUE(meshTemplateData->defaultVelocities);
                             }
                         }
-                        else
+                        else // isFurPath
                         {
                             const auto& characterTemplateData = _furTemplateDataPerCharPerGeomFile[entityData->inputGeoData._characterIdx];
                             const auto& lodTemplateData = characterTemplateData[lodIndex];
@@ -1794,10 +1807,6 @@ namespace glm
                             if (nameToken == _furPropertyTokens->points)
                             {
                                 RETURN_TRUE_WITH_OPTIONAL_VALUE(furTemplateData->defaultPoints);
-                            }
-                            if (nameToken == _furPropertyTokens->widths)
-                            {
-                                RETURN_TRUE_WITH_OPTIONAL_VALUE(furTemplateData->unscaledWidths);
                             }
                             if (nameToken == _furPropertyTokens->velocities)
                             {
@@ -1916,8 +1925,6 @@ namespace glm
             {
                 usdCharacterFiles = _params.glmUsdCharacterFiles.GetText();
             }
-
-            _furCurveIncr = std::max(1l, std::lround(100.0f / _params.glmFurRenderPercent));
 
             float renderPercent = _params.glmRenderPercent * 0.01f;
 
@@ -2137,8 +2144,7 @@ namespace glm
                             _ComputeSkinMeshTemplateData(characterTemplateData[iGeo], inputGeoData, outputData);
                             if (_params.glmEnableFur)
                             {
-                                _ComputeFurTemplateData(
-                                    _furTemplateDataPerCharPerGeomFile[iChar][iGeo], inputGeoData, outputData);
+                                _ComputeFurTemplateData(_furTemplateDataPerCharPerGeomFile[iChar][iGeo], inputGeoData, outputData);
                             }
                         }
                     }
@@ -2482,7 +2488,6 @@ namespace glm
                     else if (displayMode == GolaemDisplayMode::SKINMESH)
                     {
                         auto& characterTemplateData = _skinMeshTemplateDataPerCharPerGeomFile[characterIdx];
-                        auto& furTemplateData = _furTemplateDataPerCharPerGeomFile[characterIdx];
 
                         glm::PODArray<int> gchaMeshIds;
                         glm::PODArray<int> meshAssetMaterialIndices;
@@ -2525,7 +2530,8 @@ namespace glm
                             _InitSkinMeshData(entityData->entityPath, skinMeshEntityData, 0, lodTemplateData, gchaMeshIds, meshAssetMaterialIndices);
                             if (_params.glmEnableFur)
                             {
-                                _InitFurData(entityData->entityPath, entityData, 0, furTemplateData[geometryFileIdx]);
+                                auto& furTemplateData = _furTemplateDataPerCharPerGeomFile[characterIdx];
+                                _InitFurData(entityData->entityPath, skinMeshEntityData, 0, furTemplateData[geometryFileIdx]);
                             }
                         }
                         else
@@ -2547,7 +2553,8 @@ namespace glm
                                 _InitSkinMeshData(lodPath, skinMeshEntityData, iLod, lodTemplateData, gchaMeshIds, meshAssetMaterialIndices);
                                 if (_params.glmEnableFur)
                                 {
-                                    _InitFurData(lodPath, entityData, iLod, furTemplateData[iLod]);
+                                    auto& furTemplateData = _furTemplateDataPerCharPerGeomFile[characterIdx];
+                                    _InitFurData(lodPath, skinMeshEntityData, iLod, furTemplateData[iLod]);
                                 }
                             }
                         }
@@ -2661,7 +2668,7 @@ namespace glm
                 SkinMeshTemplateData::SP meshTemplateData = itMesh->second;
                 entityData->computeVelocities = entityData->computeVelocities || meshTemplateData->velocitiesIntShaderAttributeIndex >= 0;
 
-                GlmMap<GlmString, SdfPath> meshTreePaths;
+                GlmMap<GlmString, SdfPath> meshTreePaths; // the hierarchy will always be different for each mesh, thus there is no need to reuse it between meshes
                 SdfPath lastMeshTransformPath = _CreateHierarchyFor(meshTemplateData->meshAlias, parentPath, meshTreePaths);
 
                 SkinMeshMapData& meshMapData = _skinMeshDataMap[lastMeshTransformPath];
@@ -2676,19 +2683,29 @@ namespace glm
         //-----------------------------------------------------------------------------
         void GolaemUSD_DataImpl::_InitFurData(
             const SdfPath& parentPath,
-            EntityData::SP entityData,
+            SkinMeshEntityData::SP entityData,
             size_t lodIndex,
             const std::map<int, FurTemplateData::SP>& templateDataPerFur)
         {
             for (const auto& [assetIndex, furTemplateData] : templateDataPerFur)
             {
-                GlmMap<GlmString, SdfPath> existingPaths;
+                entityData->computeVelocities = entityData->computeVelocities || furTemplateData->velocitiesIntShaderAttributeIndex >= 0;
+                GlmMap<GlmString, SdfPath> existingPaths; // the hierarchy will always be different for each fur, thus there is no need to reuse it between furs
                 SdfPath furPath = _CreateHierarchyFor(furTemplateData->furAlias, parentPath, existingPaths);
                 FurMapData& furMapData = _furDataMap[furPath];
                 furMapData.entityData = entityData;
                 furMapData.lodIndex = lodIndex;
                 furMapData.furAssetIndex = assetIndex;
                 furMapData.templateData = furTemplateData;
+                furMapData.staticData = new FurStaticData();
+                furMapData.staticData->scaledWidths = furTemplateData->unscaledWidths;
+                const glm::crowdio::GlmSimulationData* simuData = entityData->inputGeoData._simuData;
+                auto& entityIndex = entityData->inputGeoData._entityIndex;
+                float entityScale = simuData->_scales[entityIndex];
+                for (size_t i = 0, count = furMapData.staticData->scaledWidths.size(); i < count; ++i)
+                {
+                    furMapData.staticData->scaledWidths[i] *= entityScale;
+                }
             }
         }
 
@@ -3008,7 +3025,7 @@ namespace glm
                             }
                             else if (nameToken == _furPropertyTokens->widths)
                             {
-                                *value = VtValue(furMapData->templateData->unscaledWidths);
+                                *value = VtValue(furMapData->staticData->scaledWidths);
                             }
                             else if (nameToken == _furPropertyTokens->uvs)
                             {
@@ -3016,12 +3033,15 @@ namespace glm
                             }
                             else if (nameToken == _furPropertyTokens->velocities)
                             {
-                                SkinMeshEntityData::SP skinMeshEntityData = glm::staticCast<SkinMeshEntityData>(furMapData->entityData);
-                                if (!skinMeshEntityData->computeVelocities || furMapData->templateData->defaultVelocities.empty())
+                                if (!furMapData->entityData->computeVelocities || furMapData->templateData->defaultVelocities.empty())
                                 {
                                     return false;
                                 }
                                 *value = VtValue(furMapData->templateData->defaultVelocities);
+                            }
+                            else if (nameToken == _furPropertyTokens->type)
+                            {
+                                *value = VtValue(furMapData->templateData->curveType);
                             }
                             else
                             {
@@ -3321,11 +3341,11 @@ namespace glm
                     }
                     if (TfMapLookupPtr(furMapData->templateData->floatProperties, nameToken))
                     {
-                        RETURN_TRUE_WITH_OPTIONAL_VALUE(_shaderAttrTypes[ShaderAttributeType::FLOAT]);
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(_furPropertyTypes[0]);
                     }
                     if (TfMapLookupPtr(furMapData->templateData->vector3Properties, nameToken))
                     {
-                        RETURN_TRUE_WITH_OPTIONAL_VALUE(_shaderAttrTypes[ShaderAttributeType::VECTOR]);
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(_furPropertyTypes[1]);
                     }
 
                     return false;
@@ -4136,8 +4156,7 @@ namespace glm
                             int assetIndex = static_cast<int>(ids._furAssetIdx);
                             auto& geoFileIndex = skinMeshEntityFrameData->geometryFileIdx;
 
-                            FurTemplateData::SP furTemplateData =
-                                _furTemplateDataPerCharPerGeomFile[characterIdx][geoFileIndex].at(assetIndex);
+                            FurTemplateData::SP furTemplateData = _furTemplateDataPerCharPerGeomFile[characterIdx][geoFileIndex].at(assetIndex);
                             FurData::SP furData = new FurData();
                             lodData->furData[assetIndex] = furData;
                             furData->templateData = furTemplateData;
@@ -4157,7 +4176,7 @@ namespace glm
                                 for (size_t icurve = 0; icurve < ncurve; ++icurve)
                                 {
                                     size_t nvert = group._numVertices[icurve];
-                                    if (icurve % _furCurveIncr == 0 && group._supportMeshId == ids._meshInFurIdx)
+                                    if ((icurve % 100) < _params.glmFurRenderPercent && group._supportMeshId == ids._meshInFurIdx)
                                     {
                                         for (size_t ivert = 0; ivert < nvert; ++ivert)
                                         {
@@ -4166,23 +4185,6 @@ namespace glm
                                         }
                                     }
                                     inputIndex += nvert;
-                                }
-                            }
-
-                            // scale widths
-
-                            size_t nwidth = furTemplateData->unscaledWidths.size();
-                            if (nwidth > 0)
-                            {
-                                auto& entityIndex = entityData->inputGeoData._entityIndex;
-                                const glm::crowdio::GlmSimulationData* simuData = entityData->inputGeoData._simuData;
-                                float scale = simuData->_scales[entityIndex];
-                                const VtFloatArray& wsrc = furTemplateData->unscaledWidths;
-                                VtFloatArray& wdst = furData->widths;
-                                wdst.resize(nwidth);
-                                for (size_t iwidth = 0; iwidth < nwidth; ++iwidth)
-                                {
-                                    wdst[iwidth] = scale * wsrc[iwidth];
                                 }
                             }
                         }
@@ -4215,8 +4217,8 @@ namespace glm
             {
                 halfExtents = geoAsset->_halfExtentsYUp;
             }
-            float characterScale = entityData->inputGeoData._simuData->_scales[entityData->inputGeoData._entityIndex];
-            halfExtents *= characterScale;
+            float entityScale = entityData->inputGeoData._simuData->_scales[entityData->inputGeoData._entityIndex];
+            halfExtents *= entityScale;
             extent.Set(halfExtents[0], halfExtents[1], halfExtents[2]);
         }
 
@@ -4355,8 +4357,6 @@ namespace glm
         //-----------------------------------------------------------------------------
         void GolaemUSD_DataImpl::_ComputeSkinMeshTemplateData(std::map<std::pair<int, int>, SkinMeshTemplateData::SP>& lodTemplateData, const glm::crowdio::InputEntityGeoData& inputGeoData, const glm::crowdio::OutputEntityGeoData& outputData)
         {
-            glm::GlmString materialPath = _params.glmMaterialPath.GetText();
-
             int velocitiesShaderAttributeIndex = -1, velocitiesIntShaderAttributeIndex = -1;
             _FindEnableVelocitiesShaderAttribute(inputGeoData._character, inputGeoData._characterIdx, velocitiesShaderAttributeIndex, velocitiesIntShaderAttributeIndex);
 
@@ -4632,6 +4632,9 @@ namespace glm
             int velocitiesShaderAttributeIndex = -1, velocitiesIntShaderAttributeIndex = -1;
             _FindEnableVelocitiesShaderAttribute(inputGeoData._character, inputGeoData._characterIdx, velocitiesShaderAttributeIndex, velocitiesIntShaderAttributeIndex);
 
+            GlmString attributeNamespace = _params.glmAttributeNamespace.GetText();
+            attributeNamespace.rtrim(":");
+
             for (size_t iFur = 0; iFur < idsArray.size(); ++iFur)
             {
                 const glm::crowdio::FurIds& ids = idsArray[iFur];
@@ -4639,6 +4642,9 @@ namespace glm
 
                 FurTemplateData::SP furTemplateData = new FurTemplateData();
                 furTemplateDataMap[assetIndex] = furTemplateData;
+
+                // Initialize curveType to a safe default in case no curves are found.
+                furTemplateData->curveType = UsdGeomTokens->cubic;
 
                 // iterate over curves a first time to count the curves and
                 // vertices, and to see whether widths and UVs are provided
@@ -4655,8 +4661,12 @@ namespace glm
                     if (group._supportMeshId == ids._meshInFurIdx)
                     {
                         size_t ncurve = group._numVertices.size();
-                        for (size_t icurve = 0; icurve < ncurve; icurve += _furCurveIncr)
+                        for (size_t icurve = 0; icurve < ncurve; ++icurve)
                         {
+                            if (icurve % 100 >= _params.glmFurRenderPercent)
+                            {
+                                continue;
+                            }
                             ++curveCount;
                             vertexCount += group._numVertices[icurve];
                             hasWidths = hasWidths || group._widths.size() > 0;
@@ -4665,141 +4675,144 @@ namespace glm
                     }
                 }
 
-                if (curveCount == 0)
+                if (curveCount > 0)
                 {
-                    continue;
-                }
 
-                // the curve type and per-curve properties are determined by the
-                // first group; we assume they are the same for all the groups
+                    // the curve type and per-curve properties are determined by the
+                    // first group; we assume they are the same for all the groups
 
-                const glm::crowdio::FurCurveGroup& firstGroup = cache->_curveGroups[0];
+                    const glm::crowdio::FurCurveGroup& firstGroup = cache->_curveGroups[0];
 
-                furTemplateData->curveDegree = (firstGroup._curveDegrees == 1)
-                                                   ? UsdGeomTokens->linear
-                                                   : UsdGeomTokens->cubic;
+                    furTemplateData->curveType = (firstGroup._curveDegrees == 1) ? UsdGeomTokens->linear : UsdGeomTokens->cubic;
 
-                size_t floatPropCount = firstGroup._floatPropertiesNames.size();
-                size_t vector3PropCount = firstGroup._vector3PropertiesNames.size();
-                std::vector<VtFloatArray> floatProps(floatPropCount);
-                std::vector<VtVec3fArray> vector3Props(vector3PropCount);
+                    size_t floatPropCount = firstGroup._floatPropertiesNames.size();
+                    size_t vector3PropCount = firstGroup._vector3PropertiesNames.size();
+                    std::vector<VtFloatArray> floatProps(floatPropCount);
+                    std::vector<VtVec3fArray> vector3Props(vector3PropCount);
 
-                for (size_t i = 0; i < floatPropCount; ++i)
-                {
-                    floatProps[i].reserve(curveCount);
-                }
-
-                for (size_t i = 0; i < vector3PropCount; ++i)
-                {
-                    vector3Props[i].reserve(curveCount);
-                }
-
-                // create vertex counts, widths, UVs and default points
-
-                furTemplateData->defaultPoints.assign(vertexCount, GfVec3f(0));
-                furTemplateData->vertexCounts.reserve(curveCount);
-                if (hasWidths)
-                {
-                    furTemplateData->unscaledWidths.reserve(vertexCount);
-                }
-                if (hasUVs)
-                {
-                    furTemplateData->uvs.reserve(vertexCount);
-                }
-
-                for (const glm::crowdio::FurCurveGroup& group : cache->_curveGroups)
-                {
-                    if (group._supportMeshId != ids._meshInFurIdx)
+                    for (size_t i = 0; i < floatPropCount; ++i)
                     {
-                        continue;
+                        floatProps[i].reserve(curveCount);
                     }
 
-                    size_t inputIndex = 0;
-                    size_t ncurve = group._numVertices.size();
-                    for (size_t icurve = 0; icurve < ncurve; ++icurve)
+                    for (size_t i = 0; i < vector3PropCount; ++i)
                     {
-                        int nvert = group._numVertices[icurve];
-                        if (icurve % _furCurveIncr != 0)
+                        vector3Props[i].reserve(curveCount);
+                    }
+
+                    // create vertex counts, widths, UVs and default points
+
+                    furTemplateData->defaultPoints.assign(vertexCount, GfVec3f(0));
+                    furTemplateData->vertexCounts.reserve(curveCount);
+                    if (hasWidths)
+                    {
+                        furTemplateData->unscaledWidths.reserve(vertexCount);
+                    }
+                    if (hasUVs)
+                    {
+                        furTemplateData->uvs.reserve(vertexCount);
+                    }
+
+                    for (const glm::crowdio::FurCurveGroup& group : cache->_curveGroups)
+                    {
+                        if (group._supportMeshId != ids._meshInFurIdx)
                         {
-                            inputIndex += nvert;
                             continue;
                         }
 
-                        // vertex counts, widths and UVs
-
-                        furTemplateData->vertexCounts.push_back(static_cast<int>(nvert));
-                        for (size_t ivert = 0; ivert < nvert; ++ivert)
+                        size_t inputIndex = 0;
+                        size_t ncurve = group._numVertices.size();
+                        for (size_t icurve = 0; icurve < ncurve; ++icurve)
                         {
-                            if (hasWidths)
+                            int nvert = group._numVertices[icurve];
+                            if (icurve % 100 >= _params.glmFurRenderPercent)
                             {
-                                if (group._widths.empty())
-                                {
-                                    furTemplateData->unscaledWidths.push_back(0);
-                                }
-                                else
-                                {
-                                    furTemplateData->unscaledWidths.push_back(group._widths[inputIndex]);
-                                }
+                                inputIndex += nvert;
+                                continue;
                             }
-                            if (hasUVs)
+
+                            // vertex counts, widths and UVs
+
+                            furTemplateData->vertexCounts.push_back(static_cast<int>(nvert));
+                            for (size_t ivert = 0; ivert < nvert; ++ivert)
                             {
-                                if (group._uvs.empty())
+                                if (hasWidths)
                                 {
-                                    furTemplateData->uvs.emplace_back(0.0f);
+                                    if (group._widths.empty())
+                                    {
+                                        furTemplateData->unscaledWidths.push_back(0);
+                                    }
+                                    else
+                                    {
+                                        furTemplateData->unscaledWidths.push_back(group._widths[inputIndex]);
+                                    }
                                 }
-                                else
+                                if (hasUVs)
                                 {
-                                    furTemplateData->uvs.emplace_back(
-                                        group._uvs[inputIndex][0],
-                                        group._uvs[inputIndex][1]);
+                                    if (group._uvs.empty())
+                                    {
+                                        furTemplateData->uvs.emplace_back(0.0f);
+                                    }
+                                    else
+                                    {
+                                        furTemplateData->uvs.emplace_back(
+                                            group._uvs[inputIndex][0],
+                                            group._uvs[inputIndex][1]);
+                                    }
                                 }
+                                ++inputIndex;
                             }
-                            ++inputIndex;
-                        }
 
-                        // property values
+                            // property values
 
-                        if (group._floatProperties.size() == floatPropCount)
-                        {
+                            // Always append one value per curve and per property to keep
+                            // per-curve arrays aligned with vertexCounts / curveCount.
                             for (size_t iprop = 0; iprop < floatPropCount; ++iprop)
                             {
-                                floatProps[iprop].push_back(group._floatProperties[iprop][icurve]);
+                                float value = 0.0f;
+                                if (group._floatProperties.size() == floatPropCount &&
+                                    iprop < group._floatProperties.size() &&
+                                    icurve < group._floatProperties[iprop].size())
+                                {
+                                    value = group._floatProperties[iprop][icurve];
+                                }
+                                floatProps[iprop].push_back(value);
                             }
-                        }
-
-                        if (group._vector3Properties.size() == vector3PropCount)
-                        {
                             for (size_t iprop = 0; iprop < vector3PropCount; ++iprop)
                             {
-                                vector3Props[iprop].emplace_back(group._vector3Properties[iprop][icurve].getFloatValues());
+                                GfVec3f value(0.0f);
+                                if (group._vector3Properties.size() == vector3PropCount &&
+                                    iprop < group._vector3Properties.size() &&
+                                    icurve < group._vector3Properties[iprop].size())
+                                {
+                                    value.Set(group._vector3Properties[iprop][icurve].getFloatValues());
+                                }
+                                vector3Props[iprop].push_back(value);
                             }
                         }
                     }
-                }
 
-                // per-curve properties
+                    // per-curve properties
 
-                GlmString attributeNamespace = _params.glmAttributeNamespace.GetText();
-                attributeNamespace.rtrim(":");
-
-                for (size_t i = 0; i < floatPropCount; ++i)
-                {
-                    GlmString propname = firstGroup._floatPropertiesNames[i];
-                    if (!attributeNamespace.empty())
+                    for (size_t i = 0; i < floatPropCount; ++i)
                     {
-                        propname = attributeNamespace + ":" + propname;
+                        GlmString propname = TfMakeValidIdentifier(firstGroup._floatPropertiesNames[i].c_str());
+                        if (!attributeNamespace.empty())
+                        {
+                            propname = attributeNamespace + ":" + propname;
+                        }
+                        furTemplateData->floatProperties[TfToken(propname.c_str())] = floatProps[i];
                     }
-                    furTemplateData->floatProperties[TfToken(propname.c_str())] = floatProps[i];
-                }
 
-                for (size_t i = 0; i < vector3PropCount; ++i)
-                {
-                    GlmString propname = firstGroup._vector3PropertiesNames[i];
-                    if (!attributeNamespace.empty())
+                    for (size_t i = 0; i < vector3PropCount; ++i)
                     {
-                        propname = attributeNamespace + ":" + propname;
+                        GlmString propname = TfMakeValidIdentifier(firstGroup._vector3PropertiesNames[i].c_str());
+                        if (!attributeNamespace.empty())
+                        {
+                            propname = attributeNamespace + ":" + propname;
+                        }
+                        furTemplateData->vector3Properties[TfToken(propname.c_str())] = vector3Props[i];
                     }
-                    furTemplateData->vector3Properties[TfToken(propname.c_str())] = vector3Props[i];
                 }
 
                 // fur alias
@@ -4868,6 +4881,12 @@ namespace glm
                 {
                     materialName = "";
                 }
+            }
+            break;
+            default:
+            {
+                // Fail safely for any unexpected enum values
+                materialName = "";
             }
             break;
             }
