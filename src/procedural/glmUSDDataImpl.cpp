@@ -4759,13 +4759,11 @@ namespace glm
                                 {
                                     if (group._uvs.empty())
                                     {
-                                        furTemplateData->uvs.emplace_back(0.0f);
+                                        furTemplateData->uvs.push_back({0.0f, 0.0f});
                                     }
                                     else
                                     {
-                                        furTemplateData->uvs.emplace_back(
-                                            group._uvs[inputIndex][0],
-                                            group._uvs[inputIndex][1]);
+                                        furTemplateData->uvs.push_back({group._uvs[inputIndex][0], group._uvs[inputIndex][1]});
                                     }
                                 }
                                 ++inputIndex;
