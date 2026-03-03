@@ -37,8 +37,6 @@ USD_INCLUDES_END
 
 #include <glmIdsFilter.h>
 
-#include <algorithm>
-#include <cmath>
 #include <fstream>
 
 namespace glm
@@ -4182,7 +4180,7 @@ namespace glm
                                 for (size_t icurve = 0; icurve < ncurve; ++icurve, ++globalCurveIndex)
                                 {
                                     size_t nvert = group._numVertices[icurve];
-                                    if ((globalCurveIndex % 100) < _params.glmFurRenderPercent && static_cast<size_t>(group._supportMeshId) == ids._meshInFurIdx)
+                                    if ((globalCurveIndex % 100) < _params.glmFurRenderPercent)
                                     {
                                         for (size_t ivert = 0; ivert < nvert; ++ivert)
                                         {
@@ -4597,24 +4595,24 @@ namespace glm
                     }
                 }
 
+                GlmString materialName;
+                int shadingGroupIdx = outputData._meshShadingGroups[iRenderMesh];
+                if (shadingGroupIdx >= 0 && static_cast<size_t>(shadingGroupIdx) < inputGeoData._character->_shadingGroups.size())
+                {
+                    const ShadingGroup& shGroup = inputGeoData._character->_shadingGroups[shadingGroupIdx];
+                    if (glm::glmFind(shGroup._shaderAttributes.begin(), shGroup._shaderAttributes.end(), velocitiesShaderAttributeIndex) != shGroup._shaderAttributes.end())
+                    {
+                        // if the shader attribute to enable velocities is present on the shading group, set it on the template data so it can be used later when creating the mesh data
+                        meshTemplateData->velocitiesIntShaderAttributeIndex = velocitiesIntShaderAttributeIndex;
+                        if (meshTemplateData->velocitiesIntShaderAttributeIndex >= 0)
+                        {
+                            meshTemplateData->defaultVelocities.assign(meshTemplateData->defaultPoints.size(), GfVec3f(0.0f, 0.0f, 0.0f));
+                        }
+                    }
+                    materialName = _GetMaterialForShadingGroup(inputGeoData._character, shGroup, inputGeoData._characterIdx, shadingGroupIdx);
+                }
                 if (_params.glmMaterialAssignMode != GolaemMaterialAssignMode::NO_ASSIGNMENT)
                 {
-                    GlmString materialName;
-                    int shadingGroupIdx = outputData._meshShadingGroups[iRenderMesh];
-                    if (shadingGroupIdx >= 0 && static_cast<size_t>(shadingGroupIdx) < inputGeoData._character->_shadingGroups.size())
-                    {
-                        const ShadingGroup& shGroup = inputGeoData._character->_shadingGroups[shadingGroupIdx];
-                        if (glm::glmFind(shGroup._shaderAttributes.begin(), shGroup._shaderAttributes.end(), velocitiesShaderAttributeIndex) != shGroup._shaderAttributes.end())
-                        {
-                            // if the shader attribute to enable velocities is present on the shading group, set it on the template data so it can be used later when creating the mesh data
-                            meshTemplateData->velocitiesIntShaderAttributeIndex = velocitiesIntShaderAttributeIndex;
-                            if (meshTemplateData->velocitiesIntShaderAttributeIndex >= 0)
-                            {
-                                meshTemplateData->defaultVelocities.assign(meshTemplateData->defaultPoints.size(), GfVec3f(0.0f, 0.0f, 0.0f));
-                            }
-                        }
-                        materialName = _GetMaterialForShadingGroup(inputGeoData._character, shGroup, inputGeoData._characterIdx, shadingGroupIdx);
-                    }
                     if (materialName.empty())
                     {
                         meshTemplateData->materialPath = (*_skinMeshRelationships)[_skinMeshRelationshipTokens->materialBinding].defaultTargetPath;
@@ -4834,26 +4832,24 @@ namespace glm
                     furTemplateData->furAlias = asset._name;
                 }
 
-                // material path
-
+                GlmString materialName;
+                int shadingGroupIdx = outputData._furShadingGroups[iFur];
+                if (shadingGroupIdx >= 0 && static_cast<size_t>(shadingGroupIdx) < inputGeoData._character->_shadingGroups.size())
+                {
+                    const ShadingGroup& shGroup = inputGeoData._character->_shadingGroups[shadingGroupIdx];
+                    if (glm::glmFind(shGroup._shaderAttributes.begin(), shGroup._shaderAttributes.end(), velocitiesShaderAttributeIndex) != shGroup._shaderAttributes.end())
+                    {
+                        // if the shader attribute to enable velocities is present on the shading group, set it on the template data so it can be used later when creating the mesh data
+                        furTemplateData->velocitiesIntShaderAttributeIndex = velocitiesIntShaderAttributeIndex;
+                        if (furTemplateData->velocitiesIntShaderAttributeIndex >= 0)
+                        {
+                            furTemplateData->defaultVelocities.assign(furTemplateData->defaultPoints.size(), GfVec3f(0.0f, 0.0f, 0.0f));
+                        }
+                    }
+                    materialName = _GetMaterialForShadingGroup(inputGeoData._character, shGroup, inputGeoData._characterIdx, shadingGroupIdx);
+                }
                 if (_params.glmMaterialAssignMode != GolaemMaterialAssignMode::NO_ASSIGNMENT)
                 {
-                    GlmString materialName;
-                    int shadingGroupIdx = outputData._furShadingGroups[iFur];
-                    if (shadingGroupIdx >= 0 && static_cast<size_t>(shadingGroupIdx) < inputGeoData._character->_shadingGroups.size())
-                    {
-                        const ShadingGroup& shGroup = inputGeoData._character->_shadingGroups[shadingGroupIdx];
-                        if (glm::glmFind(shGroup._shaderAttributes.begin(), shGroup._shaderAttributes.end(), velocitiesShaderAttributeIndex) != shGroup._shaderAttributes.end())
-                        {
-                            // if the shader attribute to enable velocities is present on the shading group, set it on the template data so it can be used later when creating the mesh data
-                            furTemplateData->velocitiesIntShaderAttributeIndex = velocitiesIntShaderAttributeIndex;
-                            if (furTemplateData->velocitiesIntShaderAttributeIndex >= 0)
-                            {
-                                furTemplateData->defaultVelocities.assign(furTemplateData->defaultPoints.size(), GfVec3f(0.0f, 0.0f, 0.0f));
-                            }
-                        }
-                        materialName = _GetMaterialForShadingGroup(inputGeoData._character, shGroup, inputGeoData._characterIdx, shadingGroupIdx);
-                    }
                     if (materialName.empty())
                     {
                         furTemplateData->materialPath = (*_furRelationships)[_furRelationshipTokens->materialBinding].defaultTargetPath;
