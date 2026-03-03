@@ -4170,13 +4170,19 @@ namespace glm
                             VtVec3fArray& vdst = furData->points;
                             size_t inputIndex = 0;
 
+                            size_t globalCurveIndex = 0;
                             for (const glm::crowdio::FurCurveGroup& group : cache->_curveGroups)
                             {
+                                if (static_cast<size_t>(group._supportMeshId) != ids._meshInFurIdx)
+                                {
+                                    continue;
+                                }
+
                                 size_t ncurve = group._numVertices.size();
-                                for (size_t icurve = 0; icurve < ncurve; ++icurve)
+                                for (size_t icurve = 0; icurve < ncurve; ++icurve, ++globalCurveIndex)
                                 {
                                     size_t nvert = group._numVertices[icurve];
-                                    if ((icurve % 100) < _params.glmFurRenderPercent && group._supportMeshId == ids._meshInFurIdx)
+                                    if ((globalCurveIndex % 100) < _params.glmFurRenderPercent && static_cast<size_t>(group._supportMeshId) == ids._meshInFurIdx)
                                     {
                                         for (size_t ivert = 0; ivert < nvert; ++ivert)
                                         {
@@ -4595,7 +4601,7 @@ namespace glm
                 {
                     GlmString materialName;
                     int shadingGroupIdx = outputData._meshShadingGroups[iRenderMesh];
-                    if (shadingGroupIdx >= 0 && shadingGroupIdx < inputGeoData._character->_shadingGroups.size())
+                    if (shadingGroupIdx >= 0 && static_cast<size_t>(shadingGroupIdx) < inputGeoData._character->_shadingGroups.size())
                     {
                         const ShadingGroup& shGroup = inputGeoData._character->_shadingGroups[shadingGroupIdx];
                         if (glm::glmFind(shGroup._shaderAttributes.begin(), shGroup._shaderAttributes.end(), velocitiesShaderAttributeIndex) != shGroup._shaderAttributes.end())
@@ -4656,22 +4662,25 @@ namespace glm
                 bool hasWidths = false;
                 bool hasUVs = false;
 
+                size_t globalCurveIndex = 0;
                 for (const glm::crowdio::FurCurveGroup& group : cache->_curveGroups)
                 {
-                    if (group._supportMeshId == ids._meshInFurIdx)
+                    if (static_cast<size_t>(group._supportMeshId) != ids._meshInFurIdx)
                     {
-                        size_t ncurve = group._numVertices.size();
-                        for (size_t icurve = 0; icurve < ncurve; ++icurve)
+                        continue;
+                    }
+
+                    size_t ncurve = group._numVertices.size();
+                    for (size_t icurve = 0; icurve < ncurve; ++icurve, ++globalCurveIndex)
+                    {
+                        if (globalCurveIndex % 100 >= _params.glmFurRenderPercent)
                         {
-                            if (icurve % 100 >= _params.glmFurRenderPercent)
-                            {
-                                continue;
-                            }
-                            ++curveCount;
-                            vertexCount += group._numVertices[icurve];
-                            hasWidths = hasWidths || group._widths.size() > 0;
-                            hasUVs = hasUVs || group._uvs.size() > 0;
+                            continue;
                         }
+                        ++curveCount;
+                        vertexCount += group._numVertices[icurve];
+                        hasWidths = hasWidths || group._widths.size() > 0;
+                        hasUVs = hasUVs || group._uvs.size() > 0;
                     }
                 }
 
@@ -4713,19 +4722,20 @@ namespace glm
                         furTemplateData->uvs.reserve(vertexCount);
                     }
 
+                    globalCurveIndex = 0;
                     for (const glm::crowdio::FurCurveGroup& group : cache->_curveGroups)
                     {
-                        if (group._supportMeshId != ids._meshInFurIdx)
+                        if (static_cast<size_t>(group._supportMeshId) != ids._meshInFurIdx)
                         {
                             continue;
                         }
 
                         size_t inputIndex = 0;
                         size_t ncurve = group._numVertices.size();
-                        for (size_t icurve = 0; icurve < ncurve; ++icurve)
+                        for (size_t icurve = 0; icurve < ncurve; ++icurve, ++globalCurveIndex)
                         {
-                            int nvert = group._numVertices[icurve];
-                            if (icurve % 100 >= _params.glmFurRenderPercent)
+                            size_t nvert = group._numVertices[icurve];
+                            if (globalCurveIndex % 100 >= _params.glmFurRenderPercent)
                             {
                                 inputIndex += nvert;
                                 continue;
@@ -4830,7 +4840,7 @@ namespace glm
                 {
                     GlmString materialName;
                     int shadingGroupIdx = outputData._furShadingGroups[iFur];
-                    if (shadingGroupIdx >= 0 && shadingGroupIdx < inputGeoData._character->_shadingGroups.size())
+                    if (shadingGroupIdx >= 0 && static_cast<size_t>(shadingGroupIdx) < inputGeoData._character->_shadingGroups.size())
                     {
                         const ShadingGroup& shGroup = inputGeoData._character->_shadingGroups[shadingGroupIdx];
                         if (glm::glmFind(shGroup._shaderAttributes.begin(), shGroup._shaderAttributes.end(), velocitiesShaderAttributeIndex) != shGroup._shaderAttributes.end())
@@ -4872,7 +4882,7 @@ namespace glm
             case GolaemMaterialAssignMode::BY_SURFACE_SHADER:
             {
                 int shaderAssetIdx = _sgToSsPerChar[characterIdx][shadingGroupIdx];
-                if (shaderAssetIdx >= 0 && shaderAssetIdx < character->_shaderAssets.size())
+                if (shaderAssetIdx >= 0 && static_cast<size_t>(shaderAssetIdx) < character->_shaderAssets.size())
                 {
                     const ShaderAsset& shAsset = character->_shaderAssets[shaderAssetIdx];
                     materialName += TfMakeValidIdentifier(shAsset._name.c_str());
