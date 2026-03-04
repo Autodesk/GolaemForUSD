@@ -937,13 +937,13 @@ namespace glm
                         {
                             std::vector<TfToken> furTokens = _furPropertyTokens->allTokens;
                             furTokens.insert(furTokens.end(), _furRelationshipTokens->allTokens.begin(), _furRelationshipTokens->allTokens.end());
-                            for (const auto& [name, floats] : furMapData->templateData->floatProperties)
+                            for (const auto& itFloatProp : furMapData->templateData->floatProperties)
                             {
-                                furTokens.push_back(name);
+                                furTokens.push_back(itFloatProp.first);
                             }
-                            for (const auto& [name, vectors] : furMapData->templateData->vector3Properties)
+                            for (const auto& itVectorProp : furMapData->templateData->vector3Properties)
                             {
-                                furTokens.push_back(name);
+                                furTokens.push_back(itVectorProp.first);
                             }
                             RETURN_TRUE_WITH_OPTIONAL_VALUE(furTokens);
                         }
@@ -1100,16 +1100,16 @@ namespace glm
                             return;
                         }
                     }
-                    for (const auto& [name, value] : it.second.templateData->floatProperties)
+                    for (const auto& itFloatProp : it.second.templateData->floatProperties)
                     {
-                        if (!visitor->VisitSpec(data, it.first.AppendProperty(name)))
+                        if (!visitor->VisitSpec(data, it.first.AppendProperty(itFloatProp.first)))
                         {
                             return;
                         }
                     }
-                    for (const auto& [name, value] : it.second.templateData->vector3Properties)
+                    for (const auto& itVectorProp : it.second.templateData->vector3Properties)
                     {
-                        if (!visitor->VisitSpec(data, it.first.AppendProperty(name)))
+                        if (!visitor->VisitSpec(data, it.first.AppendProperty(itVectorProp.first)))
                         {
                             return;
                         }
@@ -2685,15 +2685,16 @@ namespace glm
             size_t lodIndex,
             const std::map<int, FurTemplateData::SP>& templateDataPerFur)
         {
-            for (const auto& [assetIndex, furTemplateData] : templateDataPerFur)
+            for (const auto& itFur : templateDataPerFur)
             {
+                FurTemplateData::SP furTemplateData = itFur.second;
                 entityData->computeVelocities = entityData->computeVelocities || furTemplateData->velocitiesIntShaderAttributeIndex >= 0;
                 GlmMap<GlmString, SdfPath> existingPaths; // the hierarchy will always be different for each fur, thus there is no need to reuse it between furs
                 SdfPath furPath = _CreateHierarchyFor(furTemplateData->furAlias, parentPath, existingPaths);
                 FurMapData& furMapData = _furDataMap[furPath];
                 furMapData.entityData = entityData;
                 furMapData.lodIndex = lodIndex;
-                furMapData.furAssetIndex = assetIndex;
+                furMapData.furAssetIndex = itFur.first;
                 furMapData.templateData = furTemplateData;
                 furMapData.staticData = new FurStaticData();
                 furMapData.staticData->scaledWidths = furTemplateData->unscaledWidths;
