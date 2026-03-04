@@ -3023,10 +3023,19 @@ namespace glm
                             }
                             else if (nameToken == _furPropertyTokens->widths)
                             {
+                                if (furMapData->staticData->scaledWidths.empty())
+                                {
+                                    return false;
+                                }
                                 *value = VtValue(furMapData->staticData->scaledWidths);
                             }
                             else if (nameToken == _furPropertyTokens->uvs)
                             {
+                                if (furMapData->templateData->uvs.empty())
+                                {
+                                    return false;
+                                }
+
                                 *value = VtValue(furMapData->templateData->uvs);
                             }
                             else if (nameToken == _furPropertyTokens->velocities)
