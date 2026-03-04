@@ -1155,7 +1155,7 @@ namespace glm
                         {
                             if (TfMapLookupPtr(_entityDataMap, primPath) != NULL)
                             {
-                                // Include time sample field in the property is animated.
+                                // Include time sample field if the property is animated.
                                 if (propInfo->isAnimated)
                                 {
                                     return animPropFields;
@@ -1170,7 +1170,7 @@ namespace glm
                         {
                             if (const SkelEntityData::SP* skelEntityDataPtr = TfMapLookupPtr(_skelAnimDataMap, primPath))
                             {
-                                // Include time sample field in the property is animated.
+                                // Include time sample field if the property is animated.
                                 if (propInfo->isAnimated)
                                 {
                                     if (nameToken == _skelAnimPropertyTokens->scales && !(*skelEntityDataPtr)->scalesAnimated)
@@ -1209,7 +1209,7 @@ namespace glm
                         {
                             if (TfMapLookupPtr(_entityDataMap, primPath) != NULL)
                             {
-                                // Include time sample field in the property is animated.
+                                // Include time sample field if the property is animated.
                                 if (propInfo->isAnimated)
                                 {
                                     return animPropFields;
@@ -1224,7 +1224,7 @@ namespace glm
                         {
                             if (TfMapLookupPtr(_skinMeshLodDataMap, primPath) != NULL)
                             {
-                                // Include time sample field in the property is animated.
+                                // Include time sample field if the property is animated.
                                 if (propInfo->isAnimated)
                                 {
                                     return animPropFields;
@@ -1239,7 +1239,7 @@ namespace glm
                         {
                             if (TfMapLookupPtr(_skinMeshDataMap, primPath) != NULL)
                             {
-                                // Include time sample field in the property is animated.
+                                // Include time sample field if the property is animated.
                                 if (propInfo->isAnimated)
                                 {
                                     if (propInfo->hasInterpolation)
@@ -1269,7 +1269,7 @@ namespace glm
                         {
                             if (const _PrimPropertyInfo* propInfo = TfMapLookupPtr(*_furProperties, nameToken))
                             {
-                                // Include time sample field in the property is animated.
+                                // Include time sample field if the property is animated.
                                 if (propInfo->isAnimated)
                                 {
                                     if (propInfo->hasInterpolation)
@@ -1744,11 +1744,18 @@ namespace glm
                                 }
                                 if (nameToken == _skinMeshPropertyTokens->velocities)
                                 {
-                                    if (!skinMeshEntityData->computeVelocities || meshData->velocities.empty())
+                                    if (!skinMeshEntityData->computeVelocities || (meshData->velocities.empty() && meshData->templateData->defaultVelocities.empty()))
                                     {
                                         return false;
                                     }
-                                    RETURN_TRUE_WITH_OPTIONAL_VALUE(meshData->velocities);
+                                    if (!meshData->velocities.empty())
+                                    {
+                                        RETURN_TRUE_WITH_OPTIONAL_VALUE(meshData->velocities);
+                                    }
+                                    else
+                                    {
+                                        RETURN_TRUE_WITH_OPTIONAL_VALUE(meshData->templateData->defaultVelocities);
+                                    }
                                 }
                             }
                         }
@@ -1763,11 +1770,18 @@ namespace glm
                                 }
                                 if (nameToken == _furPropertyTokens->velocities)
                                 {
-                                    if (!skinMeshEntityData->computeVelocities || furData->velocities.empty())
+                                    if (!skinMeshEntityData->computeVelocities || (furData->velocities.empty() && furData->templateData->defaultVelocities.empty()))
                                     {
                                         return false;
                                     }
-                                    RETURN_TRUE_WITH_OPTIONAL_VALUE(furData->velocities);
+                                    if (!furData->velocities.empty())
+                                    {
+                                        RETURN_TRUE_WITH_OPTIONAL_VALUE(furData->velocities);
+                                    }
+                                    else
+                                    {
+                                        RETURN_TRUE_WITH_OPTIONAL_VALUE(furData->templateData->defaultVelocities);
+                                    }
                                 }
                             }
                         }
@@ -1924,6 +1938,14 @@ namespace glm
                 usdCharacterFiles = _params.glmUsdCharacterFiles.GetText();
             }
 
+            if (_params.glmFurRenderPercent > 0)
+            {
+                _furIncrement = glm::max(1.f, 100.f / _params.glmFurRenderPercent);
+            }
+            else
+            {
+                _furIncrement = FLT_MAX;
+            }
             float renderPercent = _params.glmRenderPercent * 0.01f;
 
             // terrain file
@@ -4179,6 +4201,7 @@ namespace glm
                             size_t inputIndex = 0;
 
                             size_t globalCurveIndex = 0;
+                            float incrementFurCounter = 0.f;
                             for (const glm::crowdio::FurCurveGroup& group : cache->_curveGroups)
                             {
                                 if (static_cast<size_t>(group._supportMeshId) != ids._meshInFurIdx)
@@ -4190,13 +4213,14 @@ namespace glm
                                 for (size_t icurve = 0; icurve < ncurve; ++icurve, ++globalCurveIndex)
                                 {
                                     size_t nvert = group._numVertices[icurve];
-                                    if ((globalCurveIndex % 100) < _params.glmFurRenderPercent)
+                                    if (globalCurveIndex == (size_t)round(incrementFurCounter))
                                     {
                                         for (size_t ivert = 0; ivert < nvert; ++ivert)
                                         {
                                             GfVec3f globalPos(vsrc[inputIndex + ivert].getFloatValues());
                                             vdst.push_back(globalPos - skinMeshEntityFrameData->pos);
                                         }
+                                        incrementFurCounter += _furIncrement;
                                     }
                                     inputIndex += nvert;
                                 }
@@ -4665,12 +4689,13 @@ namespace glm
 
                 const glm::crowdio::FurCache::SP& cache = outputData._furCacheArray[ids._furCacheIdx];
 
-                int curveCount = 0;
-                int vertexCount = 0;
+                size_t curveCount = 0;
+                size_t vertexCount = 0;
                 bool hasWidths = false;
                 bool hasUVs = false;
 
                 size_t globalCurveIndex = 0;
+                float incrementFurCounter = 0.f;
                 for (const glm::crowdio::FurCurveGroup& group : cache->_curveGroups)
                 {
                     if (static_cast<size_t>(group._supportMeshId) != ids._meshInFurIdx)
@@ -4681,14 +4706,14 @@ namespace glm
                     size_t ncurve = group._numVertices.size();
                     for (size_t icurve = 0; icurve < ncurve; ++icurve, ++globalCurveIndex)
                     {
-                        if (globalCurveIndex % 100 >= _params.glmFurRenderPercent)
+                        if (globalCurveIndex == (size_t)round(incrementFurCounter))
                         {
-                            continue;
+                            ++curveCount;
+                            vertexCount += group._numVertices[icurve];
+                            hasWidths = hasWidths || group._widths.size() > 0;
+                            hasUVs = hasUVs || group._uvs.size() > 0;
+                            incrementFurCounter += _furIncrement;
                         }
-                        ++curveCount;
-                        vertexCount += group._numVertices[icurve];
-                        hasWidths = hasWidths || group._widths.size() > 0;
-                        hasUVs = hasUVs || group._uvs.size() > 0;
                     }
                 }
 
@@ -4731,6 +4756,7 @@ namespace glm
                     }
 
                     globalCurveIndex = 0;
+                    incrementFurCounter = 0.f;
                     for (const glm::crowdio::FurCurveGroup& group : cache->_curveGroups)
                     {
                         if (static_cast<size_t>(group._supportMeshId) != ids._meshInFurIdx)
@@ -4743,11 +4769,13 @@ namespace glm
                         for (size_t icurve = 0; icurve < ncurve; ++icurve, ++globalCurveIndex)
                         {
                             size_t nvert = group._numVertices[icurve];
-                            if (globalCurveIndex % 100 >= _params.glmFurRenderPercent)
+                            if (globalCurveIndex != (size_t)round(incrementFurCounter))
                             {
                                 inputIndex += nvert;
                                 continue;
                             }
+
+                            incrementFurCounter += _furIncrement;
 
                             // vertex counts, widths and UVs
 

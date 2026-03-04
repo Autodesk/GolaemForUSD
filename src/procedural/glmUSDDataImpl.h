@@ -309,6 +309,7 @@ namespace glm
 
             SdfPath _rootPathInFinalStage;
             int _rootNodeIdInFinalStage = -1;
+            float _furIncrement = 1.f;
 
         public:
             GolaemUSD_DataImpl(const GolaemUSD_DataParams& params);
