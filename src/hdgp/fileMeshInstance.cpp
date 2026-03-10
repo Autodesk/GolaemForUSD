@@ -10,96 +10,101 @@
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
-namespace glmhydra {
-
-FileMeshInstance::FileMeshInstance(
-    const std::shared_ptr<FileMeshAdapter>& adapter,
-    const SdfPath& material, const PrimvarDSMapRef& customPrimvars)
-    : _adapter(adapter),
-      _material(material),
-      _customPrimvars(customPrimvars),
-      _xform(GetIdentityXformDataSource())
+namespace glmhydra
 {
-}
 
-void FileMeshInstance::SetTransform(
-    const float pos[3], const float rot[4], float scale)
-{
-    GfMatrix4d mtx, mtx2;
-    mtx.SetScale(scale);
-    mtx2.SetRotate(GfQuatd(rot[3], rot[0], rot[1], rot[2]));
-    mtx *= mtx2;
-    mtx.SetTranslateOnly(GfVec3d(pos[0], pos[1], pos[2]));
-
-    _xform = HdXformSchema::Builder()
-        .SetMatrix(HdRetainedTypedSampledDataSource<GfMatrix4d>::New(mtx))
-        .Build();
-}
-
-HdContainerDataSourceHandle
-FileMeshInstance::GetPrimvarsDataSource() const
-{
-    HdContainerDataSourceHandle meshDataSource =
-        _adapter->GetPrimvarsDataSource();
-
-    if (!_customPrimvars || _customPrimvars->empty()) {
-        return meshDataSource;
+    FileMeshInstance::FileMeshInstance(
+        const std::shared_ptr<FileMeshAdapter>& adapter,
+        const SdfPath& material, const PrimvarDSMapRef& customPrimvars)
+        : _adapter(adapter)
+        , _material(material)
+        , _customPrimvars(customPrimvars)
+        , _xform(GetIdentityXformDataSource())
+    {
     }
 
-    HdContainerDataSourceEditor editor(meshDataSource);
+    void FileMeshInstance::SetTransform(
+        const float pos[3], const float rot[4], float scale)
+    {
+        GfMatrix4d mtx, mtx2;
+        mtx.SetScale(scale);
+        mtx2.SetRotate(GfQuatd(rot[3], rot[0], rot[1], rot[2]));
+        mtx *= mtx2;
+        mtx.SetTranslateOnly(GfVec3d(pos[0], pos[1], pos[2]));
 
-    for (auto it: *_customPrimvars) {
-        editor.Set(
-            HdDataSourceLocator(it.first),
-            HdPrimvarSchema::Builder()
-            .SetPrimvarValue(it.second)
-            .SetInterpolation(GetConstantInterpDataSource())
-            .Build());
+        _xform = HdXformSchema::Builder()
+                     .SetMatrix(HdRetainedTypedSampledDataSource<GfMatrix4d>::New(mtx))
+                     .Build();
     }
 
-    return editor.Finish();
-}
+    HdContainerDataSourceHandle
+    FileMeshInstance::GetPrimvarsDataSource() const
+    {
+        HdContainerDataSourceHandle meshDataSource =
+            _adapter->GetPrimvarsDataSource();
 
-HdContainerDataSourceHandle FileMeshInstance::GetDataSource() const
-{
-    VtTokenArray dataNames;
-    VtArray<HdDataSourceBaseHandle> dataSources;
+        if (!_customPrimvars || _customPrimvars->empty())
+        {
+            return meshDataSource;
+        }
 
-    dataNames.reserve(4);
-    dataSources.reserve(4);
+        HdContainerDataSourceEditor editor(meshDataSource);
 
-    dataNames.push_back(HdXformSchemaTokens->xform);
-    dataSources.push_back(_xform);
+        for (auto it : *_customPrimvars)
+        {
+            editor.Set(
+                HdDataSourceLocator(it.first),
+                HdPrimvarSchema::Builder()
+                    .SetPrimvarValue(it.second)
+                    .SetInterpolation(GetConstantInterpDataSource())
+                    .Build());
+        }
 
-    dataNames.push_back(HdMeshSchemaTokens->mesh);
-    dataSources.push_back(_adapter->GetMeshDataSource());
-
-    dataNames.push_back(HdPrimvarsSchemaTokens->primvars);
-    dataSources.push_back(GetPrimvarsDataSource());
-
-    if (!_material.IsEmpty()) {
-        dataNames.push_back(HdMaterialBindingsSchemaTokens->materialBindings);
-        dataSources.push_back(GetMaterialDataSource(_material));
+        return editor.Finish();
     }
 
-    return HdRetainedContainerDataSource::New(
-        dataNames.size(), dataNames.cdata(), dataSources.cdata());
-}
+    HdContainerDataSourceHandle FileMeshInstance::GetDataSource() const
+    {
+        VtTokenArray dataNames;
+        VtArray<HdDataSourceBaseHandle> dataSources;
 
-HdDataSourceLocatorSet FileMeshInstance::GetVariableDataSources() const
-{
-    // actually, all primvars except for UV coordinates can vary from frame to
-    // frame, but giving Hydra a list of all those locators seems to slow it
-    // down more than just telling it that all primvars may vary
+        dataNames.reserve(4);
+        dataSources.reserve(4);
 
-    HdDataSourceLocatorSet locators(HdPrimvarsSchema::GetDefaultLocator());
+        dataNames.push_back(HdXformSchemaTokens->xform);
+        dataSources.push_back(_xform);
 
-    bool isRigid = kEnableRigidEntities && _adapter->IsRigid();
-    if (isRigid) {
-        locators.append(HdXformSchema::GetDefaultLocator());
+        dataNames.push_back(HdMeshSchemaTokens->mesh);
+        dataSources.push_back(_adapter->GetMeshDataSource());
+
+        dataNames.push_back(HdPrimvarsSchemaTokens->primvars);
+        dataSources.push_back(GetPrimvarsDataSource());
+
+        if (!_material.IsEmpty())
+        {
+            dataNames.push_back(HdMaterialBindingsSchemaTokens->materialBindings);
+            dataSources.push_back(GetMaterialDataSource(_material));
+        }
+
+        return HdRetainedContainerDataSource::New(
+            dataNames.size(), dataNames.cdata(), dataSources.cdata());
     }
 
-    return locators;
-}
+    HdDataSourceLocatorSet FileMeshInstance::GetVariableDataSources() const
+    {
+        // actually, all primvars except for UV coordinates can vary from frame to
+        // frame, but giving Hydra a list of all those locators seems to slow it
+        // down more than just telling it that all primvars may vary
 
-}  // namespace glmhydra
+        HdDataSourceLocatorSet locators(HdPrimvarsSchema::GetDefaultLocator());
+
+        bool isRigid = kEnableRigidEntities && _adapter->IsRigid();
+        if (isRigid)
+        {
+            locators.append(HdXformSchema::GetDefaultLocator());
+        }
+
+        return locators;
+    }
+
+} // namespace glmhydra

@@ -16,50 +16,52 @@
 
 #include <vector>
 
-namespace glmhydra {
-
-/*
- * Class which provides Hydra data sources wrapping the topology and UVs found
- * in a GlmFileMesh, as well as the deformed vertices and normals at any given
- * frame. Use FileMeshInstance to add an xform, a material and any custom
- * primvars.
- */
-class FileMeshAdapter
+namespace glmhydra
 {
-public:
-    FileMeshAdapter(const glm::crowdio::GlmFileMesh& fileMesh);
 
-    void SetGeometry(
-        const glm::Array<glm::Vector3>& deformedVertices,
-        const glm::Array<glm::Vector3>& deformedNormals);
+    /*
+     * Class which provides Hydra data sources wrapping the topology and UVs found
+     * in a GlmFileMesh, as well as the deformed vertices and normals at any given
+     * frame. Use FileMeshInstance to add an xform, a material and any custom
+     * primvars.
+     */
+    class FileMeshAdapter
+    {
+    public:
+        FileMeshAdapter(const glm::crowdio::GlmFileMesh& fileMesh);
 
-    void SetGeometry(
-        const glm::Array<PXR_NS::HdSampledDataSource::Time>& shutterOffsets,
-        const DeformedVectors& deformedVertices,
-        const DeformedVectors& deformedNormals,
-        size_t meshIndex);
+        void SetGeometry(
+            const glm::Array<glm::Vector3>& deformedVertices,
+            const glm::Array<glm::Vector3>& deformedNormals);
 
-    PXR_NS::HdContainerDataSourceHandle GetMeshDataSource() const;
-    PXR_NS::HdContainerDataSourceHandle GetPrimvarsDataSource() const;
+        void SetGeometry(
+            const glm::Array<PXR_NS::HdSampledDataSource::Time>& shutterOffsets,
+            const DeformedVectors& deformedVertices,
+            const DeformedVectors& deformedNormals,
+            size_t meshIndex);
 
-    bool IsRigid() const {
-        return _isRigid;
-    }
+        PXR_NS::HdContainerDataSourceHandle GetMeshDataSource() const;
+        PXR_NS::HdContainerDataSourceHandle GetPrimvarsDataSource() const;
 
-private:
-    PXR_NS::VtIntArray _vertexCounts;
-    PXR_NS::VtIntArray _vertexIndices;
-    size_t _totalVertexCount;
-    std::vector<PXR_NS::VtVec3fArray> _vertices;
-    PXR_NS::VtIntArray _normalIndices;
-    glm::crowdio::GlmNormalMode _normalMode;
-    size_t _totalNormalCount;
-    std::vector<PXR_NS::VtVec3fArray> _normals;
-    PXR_NS::VtIntArray _uvIndices;
-    glm::crowdio::GlmUVMode _uvMode;
-    PXR_NS::VtVec2fArray _uvs;
-    std::vector<PXR_NS::HdSampledDataSource::Time> _shutterOffsets;
-    bool _isRigid;
-};
+        bool IsRigid() const
+        {
+            return _isRigid;
+        }
 
-}  // namespace glmhydra
+    private:
+        PXR_NS::VtIntArray _vertexCounts;
+        PXR_NS::VtIntArray _vertexIndices;
+        size_t _totalVertexCount;
+        std::vector<PXR_NS::VtVec3fArray> _vertices;
+        PXR_NS::VtIntArray _normalIndices;
+        glm::crowdio::GlmNormalMode _normalMode;
+        size_t _totalNormalCount;
+        std::vector<PXR_NS::VtVec3fArray> _normals;
+        PXR_NS::VtIntArray _uvIndices;
+        glm::crowdio::GlmUVMode _uvMode;
+        PXR_NS::VtVec2fArray _uvs;
+        std::vector<PXR_NS::HdSampledDataSource::Time> _shutterOffsets;
+        bool _isRigid;
+    };
+
+} // namespace glmhydra
