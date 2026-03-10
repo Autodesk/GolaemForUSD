@@ -53,6 +53,8 @@ namespace glm
     xx(short, glmLodMode, 0)                        \
     xx(GfVec3f, glmCameraPos, 0)                    \
     xx(int, glmCachedFramesCount, 3)                \
+    xx(bool, glmEnableFur, false)                   \
+    xx(float, glmFurRenderPercent, 100.f)           \
     xx(TfToken, glmProceduralFile, "")
         // clang-format on
 
@@ -82,6 +84,8 @@ namespace glm
     (glmLodMode)                        \
     (glmCameraPos)                      \
     (glmCachedFramesCount)              \
+    (glmEnableFur)                      \
+    (glmFurRenderPercent)               \
     (glmProceduralFile)
         // clang-format on
 
