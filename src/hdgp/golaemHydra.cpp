@@ -895,8 +895,8 @@ namespace
     {
         // fetch the current frame number
 
-        double frame = GetCurrentFrame(inputScene);
-        TF_DEBUG_MSG(GLMHYDRA_TRACE, "[GolaemHydra] frame number: %g\n", frame);
+        double sceneFrame = GetCurrentFrame(inputScene);
+        TF_DEBUG_MSG(GLMHYDRA_TRACE, "[GolaemHydra] frame number: %g\n", sceneFrame);
 
         // fetch the camera position and the root prim's transformation matrix, for
         // LOD computation
@@ -984,14 +984,24 @@ namespace
                 continue;
             }
 
-            const GlmFrameData* frameData =
-                cachedSimulation.getFinalFrameData(frame, UINT32_MAX, true);
+            int firstFrameInCache = 0, lastFrameInCache = 0;
+            cachedSimulation.getSrcFrameRangeAvailableOnDisk(firstFrameInCache, lastFrameInCache);
+
+            double frame = sceneFrame;
+            if (frame < firstFrameInCache)
+            {
+                frame = firstFrameInCache;
+            }
+            else if (frame > lastFrameInCache)
+            {
+                frame = lastFrameInCache;
+            }
+
+            const GlmFrameData* frameData = cachedSimulation.getFinalFrameData(frame, UINT32_MAX, true);
 
             if (frameData == nullptr)
             {
-                TF_DEBUG_MSG(
-                    GLMHYDRA_TRACE,
-                    "[GolaemHydra] no frame data, skipping field\n");
+                TF_DEBUG_MSG(GLMHYDRA_TRACE, "[GolaemHydra] no frame data, skipping crowd field %s\n", fieldName.GetText());
                 continue;
             }
 
