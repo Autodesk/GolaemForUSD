@@ -277,6 +277,25 @@ namespace
         };
     };
 
+    static glm::Mutex _fbxMutex;
+
+    //-----------------------------------------------------------------------------
+    glm::crowdio::CrowdFBXStorage& getFbxStorage()
+    {
+        glm::ScopedLock<glm::Mutex> lock(_fbxMutex);
+        static glm::crowdio::CrowdFBXStorage fbxStorage;
+        return fbxStorage;
+    }
+
+    //-----------------------------------------------------------------------------
+    glm::crowdio::CrowdFBXBaker& getFbxBaker()
+    {
+        glm::crowdio::CrowdFBXStorage& fbxStorage = getFbxStorage();
+        glm::ScopedLock<glm::Mutex> lock(_fbxMutex);
+        static glm::crowdio::CrowdFBXBaker fbxBaker(fbxStorage.touchFbxSdkManager());
+        return fbxBaker;
+    }
+
     /*
      * This is the actual plugin implementation.
      */
@@ -285,8 +304,6 @@ namespace
     public:
         GolaemProcedural(const SdfPath& proceduralPrimPath)
             : HdGpGenerativeProcedural(proceduralPrimPath)
-            , _fbxStorage()
-            , _fbxBaker(_fbxStorage.touchFbxSdkManager())
         {
             glm::usdplugin::init();
             _factory = new SimulationCacheFactory();
@@ -399,14 +416,7 @@ namespace
         std::vector<MeshEntityData> _meshEntities;
 
         // cache of reusable FileMeshAdapter instances for rigid meshes
-        std::unordered_map<MeshKey, std::shared_ptr<FileMeshAdapter>, MeshKey::Hash>
-            _rigidMeshCache;
-
-        // we don't use this, but glmPrepareEntityGeometry() needs it
-        glm::crowdio::CrowdFBXStorage _fbxStorage;
-
-        // we don't use this, but glmPrepareEntityGeometry() needs it
-        glm::crowdio::CrowdFBXBaker _fbxBaker;
+        std::unordered_map<MeshKey, std::shared_ptr<FileMeshAdapter>, MeshKey::Hash> _rigidMeshCache;
     };
 
     /*
@@ -1298,8 +1308,8 @@ namespace
         inputData._dirMapRules = _dirmapRules;
         inputData._enableLOD = lodEnabled;
         inputData._geometryTag = static_cast<short>(_args.geometryTag);
-        inputData._fbxStorage = &_fbxStorage;
-        inputData._fbxBaker = &_fbxBaker;
+        inputData._fbxStorage = &getFbxStorage();
+        inputData._fbxBaker = &getFbxBaker();
         inputData._generateFur = _args.enableFur;
 
         glm::Vector3 glmCamPos, glmEntPos;
