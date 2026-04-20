@@ -46,7 +46,7 @@ namespace glmhydra
 
         glm::crowdio::FurCache::SP _furCachePtr;
         size_t _meshInFurIndex;
-        int _curveIncr;
+        float _furIncrement;
         PXR_NS::SdfPath _material;
         const PrimvarDSMapRef _customPrimvars;
         PrimvarDSMap _perCurvePrimvars;

@@ -48,7 +48,7 @@ namespace glmhydra
         float renderPercent, int refineLevel)
         : _furCachePtr(furCachePtr)
         , _meshInFurIndex(meshInFurIndex)
-        , _curveIncr(std::max(1l, std::lround(100.0f / renderPercent)))
+        , _furIncrement(renderPercent > 0.0f ? std::max(1l, std::lround(100.0f / renderPercent)) : FLT_MAX)
         , _material(material)
         , _customPrimvars(customPrimvars)
         , _refineLevel(refineLevel)
@@ -62,16 +62,22 @@ namespace glmhydra
         size_t totalVertexCount = 0;
         size_t groupCount = furCache._curveGroups.size();
 
+        size_t globalCurveIndex = 0;
+        float incrementFurCounter = 0.f;
         for (size_t igroup = 0; igroup < groupCount; ++igroup)
         {
             const FurCurveGroup& group = furCache._curveGroups[igroup];
             if (static_cast<size_t>(group._supportMeshId) == _meshInFurIndex)
             {
                 size_t ncurve = group._numVertices.size();
-                for (size_t icurve = 0; icurve < ncurve; icurve += _curveIncr)
+                for (size_t icurve = 0; icurve < ncurve; ++icurve, ++globalCurveIndex)
                 {
-                    totalCurveCount += 1;
-                    totalVertexCount += group._numVertices[icurve];
+                    if (globalCurveIndex == (size_t)round(incrementFurCounter))
+                    {
+                        totalCurveCount += 1;
+                        totalVertexCount += group._numVertices[icurve];
+                        incrementFurCounter += _furIncrement;
+                    }
                 }
             }
         }
@@ -122,6 +128,8 @@ namespace glmhydra
         // fill in vertex counts, indices, widths, UVs and properties
 
         size_t outputIndex = 0;
+        globalCurveIndex = 0;
+        incrementFurCounter = 0.f;
 
         for (const FurCurveGroup& group : furCache._curveGroups)
         {
@@ -131,77 +139,73 @@ namespace glmhydra
             }
 
             size_t inputIndex = 0;
-            size_t ncurve = group._numVertices.size();
-
-            for (size_t icurve = 0; icurve < ncurve; ++icurve)
+            for (size_t icurve = 0, ncurve = group._numVertices.size(); icurve < ncurve; ++icurve, ++globalCurveIndex)
             {
                 size_t nvert = group._numVertices[icurve];
 
-                if (icurve % _curveIncr != 0)
+                if (globalCurveIndex == (size_t)round(incrementFurCounter))
                 {
-                    inputIndex += nvert;
-                    continue;
-                }
+                    _vertexCounts.push_back(static_cast<int>(nvert));
 
-                _vertexCounts.push_back(static_cast<int>(nvert));
-
-                for (size_t ivert = 0; ivert < nvert; ++ivert)
-                {
-                    _vertexIndices.push_back(static_cast<int>(outputIndex));
-
-                    if (hasWidths)
+                    for (size_t ivert = 0; ivert < nvert; ++ivert)
                     {
-                        if (group._widths.empty())
-                        {
-                            _widths.push_back(0.0f);
-                        }
-                        else
-                        {
-                            _widths.push_back(scale * group._widths[inputIndex]);
-                        }
-                    }
+                        _vertexIndices.push_back(static_cast<int>(outputIndex));
 
-                    if (hasUVs)
-                    {
-                        if (group._uvs.empty())
+                        if (hasWidths)
                         {
-                            _uvs.emplace_back(0.0f, 0.0f);
+                            if (group._widths.empty())
+                            {
+                                _widths.push_back(0.0f);
+                            }
+                            else
+                            {
+                                _widths.push_back(scale * group._widths[inputIndex]);
+                            }
                         }
-                        else
-                        {
-                            _uvs.emplace_back(
-                                group._uvs[inputIndex][0],
-                                group._uvs[inputIndex][1]);
-                        }
-                    }
 
-                    ++inputIndex;
-                    ++outputIndex;
+                        if (hasUVs)
+                        {
+                            if (group._uvs.empty())
+                            {
+                                _uvs.emplace_back(0.0f, 0.0f);
+                            }
+                            else
+                            {
+                                _uvs.emplace_back(
+                                    group._uvs[inputIndex][0],
+                                    group._uvs[inputIndex][1]);
+                            }
+                        }
+
+                        for (size_t iProp = 0; iProp < floatPropCount; ++iProp)
+                        {
+                            float value = 0.f;
+                            if (group._floatProperties.size() == floatPropCount &&
+                                iProp < group._floatProperties.size() &&
+                                icurve < group._floatProperties[iProp].size())
+                            {
+                                value = group._floatProperties[iProp][icurve];
+                            }
+                            floatPropValues[iProp].push_back(value);
+                        }
+
+                        for (size_t iProp = 0; iProp < vector3PropCount; ++iProp)
+                        {
+                            GfVec3f value(0.0f);
+                            if (group._vector3Properties.size() == vector3PropCount &&
+                                iProp < group._vector3Properties.size() &&
+                                icurve < group._vector3Properties[iProp].size())
+                            {
+                                value.Set(group._vector3Properties[iProp][icurve].getFloatValues());
+                            }
+                            vector3PropValues[iProp].push_back(value);
+                        }
+
+                        ++outputIndex;
+                    }
+                    incrementFurCounter += _furIncrement;
                 }
-            }
-
-            if (group._floatProperties.size() == floatPropCount)
-            {
-                for (size_t i = 0; i < floatPropCount; ++i)
-                {
-                    VtFloatArray& dst = floatPropValues[i];
-                    for (float value : group._floatProperties[i])
-                    {
-                        dst.push_back(value);
-                    }
-                }
-            }
-
-            if (group._vector3Properties.size() == vector3PropCount)
-            {
-                for (size_t i = 0; i < vector3PropCount; ++i)
-                {
-                    VtVec3fArray& dst = vector3PropValues[i];
-                    for (const glm::Vector3& vec3 : group._vector3Properties[i])
-                    {
-                        dst.emplace_back(vec3.getFloatValues());
-                    }
-                }
+                ++inputIndex;
             }
         }
 
@@ -234,13 +238,20 @@ namespace glmhydra
         dst.clear();
         dst.reserve(_vertexIndices.size());
 
+        size_t globalCurveIndex = 0;
+        float incrementFurCounter = 0.f;
         for (const FurCurveGroup& group : furCache._curveGroups)
         {
+            if (static_cast<size_t>(group._supportMeshId) != _meshInFurIndex)
+            {
+                continue;
+            }
+
             size_t ncurve = group._numVertices.size();
-            for (size_t icurve = 0; icurve < ncurve; ++icurve)
+            for (size_t icurve = 0; icurve < ncurve; ++icurve, ++globalCurveIndex)
             {
                 size_t nvert = group._numVertices[icurve];
-                if (icurve % _curveIncr == 0 && static_cast<size_t>(group._supportMeshId) == _meshInFurIndex)
+                if (globalCurveIndex == (size_t)round(incrementFurCounter))
                 {
                     for (size_t ivert = 0; ivert < nvert; ++ivert)
                     {
@@ -250,6 +261,7 @@ namespace glmhydra
                         }
                         dst.emplace_back(src[inputIndex + ivert].getFloatValues());
                     }
+                    incrementFurCounter += _furIncrement;
                 }
                 inputIndex += nvert;
             }
