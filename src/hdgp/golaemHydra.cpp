@@ -45,6 +45,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <algorithm>
+#include <cstdio>
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
@@ -105,14 +107,6 @@ namespace glm
             (none)
         );
         // clang-format on
-
-        /*
-         * We use a hash map to store an entity's custom primvars (name and data source
-         * for each), which are generated from shader attributes and PP attributes.
-         */
-        using PrimvarDataSourceMap =
-            TfDenseHashMap<TfToken, HdSampledDataSourceHandle, TfHash>;
-        using PrimvarDataSourceMapRef = std::shared_ptr<PrimvarDataSourceMap>;
 
         /*
          * Arguments (primvars) provided by the USD prim.
