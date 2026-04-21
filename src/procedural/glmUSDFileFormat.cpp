@@ -10,7 +10,7 @@
 USD_INCLUDES_START
 #include <pxr/pxr.h>
 #include <pxr/usd/pcp/dynamicFileFormatContext.h>
-#if PXR_VERSION > 2508
+#if PXR_VERSION > 2505
 #include <pxr/usd/sdf/usdaFileFormat.h>
 #define USDA_TOKENS SdfUsdaFileFormatTokens
 #else

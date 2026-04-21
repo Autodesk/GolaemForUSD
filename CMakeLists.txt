@@ -175,6 +175,7 @@ if(GOLAEMUSD_STANDALONE_BUILD)
     list_files( "src/procedural" "h;cpp;json" )
     list_files( "src/utils" "h;cpp" )
     list_files( "src/version" "h;cpp;rc")
+    list_files( "src/hdgp" "h;cpp" )
 
     # Include and Link Dependencies
     add_library( ${PROJECT_NAME} SHARED ${LIST_FILES} )
@@ -190,33 +191,10 @@ if(GOLAEMUSD_STANDALONE_BUILD)
     if(BUILD_USD_HOUDINI)
         # from Houdini toolkit/samples/USD/CMakeLists.txt
         if(MSVC)
-            set(_houdini_link_libraries_ 
+            target_link_libraries( ${PROJECT_NAME}
                 Houdini # Standard Houdini libraries
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libgusd.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_ar.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_arch.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_gf.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_js.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_kind.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_pcp.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_plug.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_sdf.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_tf.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usd.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdGeom.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdRi.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdShade.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdUtils.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_vt.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_work.lib
-                Python::Module
+                HoudiniThirdParty # Standard Houdini third party libraries
             )
-
-            set(_houdini_link_libraries_
-                ${_houdini_link_libraries_}
-                ${_houdini_hfs_root}/custom/houdini/dsolib/hboost_python${PYTHON_VERSION}${PYTHON_SUBVERSION}-mt-x64.lib)
-                
-            target_link_libraries( ${PROJECT_NAME} ${_houdini_link_libraries_})
         else()
             # Link against Houdini libraries (including USD)
             if ( DEFINED ENV{HOUDINI_HDK_LINK_GUSD} )
@@ -231,7 +209,7 @@ if(GOLAEMUSD_STANDALONE_BUILD)
             endif ()
         endif()
     else()
-        target_link_libraries( ${PROJECT_NAME} usd usdGeom)
+        target_link_libraries( ${PROJECT_NAME} hdGp usd usdGeom)
     endif()
 
     if(MSVC)
@@ -310,6 +288,7 @@ else()
     list_files( "src/procedural" "h;cpp;json" )
     list_files( "src/utils" "h;cpp" )
     list_files( "src/version" "h;cpp;rc")
+    list_files( "src/hdgp" "h;cpp" )
 
     # Create a library
     add_library( ${PROJECT_NAME} SHARED ${LIST_FILES} )
@@ -418,7 +397,7 @@ else()
             )
         endif()
     else()
-        target_link_libraries( ${PROJECT_NAME} usd usdGeom)
+        target_link_libraries( ${PROJECT_NAME} usd usdGeom hdGp)
     endif()
 
     # cannot compile debug - windows or linux
