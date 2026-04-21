@@ -1,5 +1,7 @@
 #include "furAdapter.h"
 
+#if PXR_VERSION > 2505
+
 #include <pxr/imaging/hd/basisCurvesSchema.h>
 #include <pxr/imaging/hd/basisCurvesTopologySchema.h>
 #include <pxr/imaging/hd/legacyDisplayStyleSchema.h>
@@ -475,3 +477,5 @@ namespace glm
 
     } // namespace hydra
 } // namespace glm
+
+#endif // PXR_VERSION > 2505

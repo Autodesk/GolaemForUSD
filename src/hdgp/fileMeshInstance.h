@@ -1,5 +1,7 @@
 #pragma once
 
+#if PXR_VERSION > 2505
+
 #include "fileMeshAdapter.h"
 #include "hydraGlobals.h"
 #include "meshDataSourceBase.h"
@@ -46,3 +48,5 @@ namespace glm
 
     } // namespace hydra
 } // namespace glm
+
+#endif // PXR_VERSION > 2505

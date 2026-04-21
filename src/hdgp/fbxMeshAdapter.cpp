@@ -1,5 +1,7 @@
 #include "fbxMeshAdapter.h"
 
+#if PXR_VERSION > 2505
+
 #include <glmCrowdFBXBaker.h>
 #include <glmCrowdFBXCharacter.h>
 
@@ -524,3 +526,5 @@ namespace glm
 
     } // namespace hydra
 } // namespace glm
+
+#endif // PXR_VERSION > 2505

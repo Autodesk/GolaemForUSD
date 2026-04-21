@@ -1,5 +1,7 @@
 #include "fileMeshAdapter.h"
 
+#if PXR_VERSION > 2505
+
 #include <pxr/imaging/hd/meshSchema.h>
 #include <pxr/imaging/hd/meshTopologySchema.h>
 #include <pxr/imaging/hd/primvarSchema.h>
@@ -307,3 +309,5 @@ namespace glm
 
     } // namespace hydra
 } // namespace glm
+
+#endif // PXR_VERSION > 2505

@@ -1946,7 +1946,7 @@ namespace glm
             {
                 _furIncrement = FLT_MAX;
             }
-            float renderPercent = _params.glmRenderPercent * 0.01f;
+            float renderPercent = glm::clamp(_params.glmRenderPercent, 0.f, 100.f) * 0.01f;
 
             // terrain file
             glm::Array<glm::GlmString> crowdFieldNames = glm::stringToStringArray(cfNames.c_str(), ";");

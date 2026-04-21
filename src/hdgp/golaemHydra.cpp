@@ -1,3 +1,5 @@
+#if PXR_VERSION > 2505
+
 #include <pxr/imaging/hdGp/generativeProceduralPlugin.h>
 #include <pxr/imaging/hdGp/generativeProceduralPluginRegistry.h>
 
@@ -446,7 +448,7 @@ namespace glm
                 VtValue v = src->GetValue(0.0f);
                 if (v.IsHolding<TfToken>())
                 {
-                    std::string str = v.UncheckedGet<TfToken>();
+                    const std::string& str = v.UncheckedGet<TfToken>().GetString();
                     std::string::size_type pos, lastpos = 0;
                     while ((pos = str.find(';', lastpos)) != std::string::npos)
                     {
@@ -997,9 +999,10 @@ namespace glm
                 }
 
                 int entityCount = simData->_entityCount;
-                if (_args.renderPercent < 100.0f)
+                float renderPercent = glm::clamp(_args.renderPercent, 0.f, 100.f);
+                if (renderPercent < 100.0f)
                 {
-                    entityCount = std::lround(entityCount * _args.renderPercent * 0.01f);
+                    entityCount = std::lround(entityCount * renderPercent * 0.01f);
                 }
                 if (_args.displayMode == golaemTokens->bbox)
                 {
@@ -2025,3 +2028,5 @@ namespace glm
         }
     } // namespace hydra
 } // namespace glm
+
+#endif // PXR_VERSION > 2505

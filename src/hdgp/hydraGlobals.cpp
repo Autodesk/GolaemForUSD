@@ -1,5 +1,7 @@
 #include "hydraGlobals.h"
 
+#if PXR_VERSION > 2505
+
 #include <pxr/imaging/hd/materialBindingsSchema.h>
 #include <pxr/imaging/hd/primvarSchema.h>
 #include <pxr/imaging/hd/retainedDataSource.h>
@@ -85,3 +87,5 @@ namespace glm
 
     } // namespace hydra
 } // namespace glm
+
+#endif // PXR_VERSION > 2505

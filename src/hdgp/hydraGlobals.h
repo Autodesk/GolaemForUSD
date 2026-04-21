@@ -1,5 +1,7 @@
 #pragma once
 
+#if PXR_VERSION > 2505
+
 #include <glmArray.h>
 #include <glmVector3.h>
 
@@ -54,3 +56,5 @@ namespace glm
 
     } // namespace hydra
 } // namespace glm
+
+#endif // PXR_VERSION > 2505

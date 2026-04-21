@@ -1,5 +1,7 @@
 #include "fileMeshInstance.h"
 
+#if PXR_VERSION > 2505
+
 #include <pxr/imaging/hd/containerDataSourceEditor.h>
 #include <pxr/imaging/hd/materialBindingsSchema.h>
 #include <pxr/imaging/hd/meshSchema.h>
@@ -110,3 +112,5 @@ namespace glm
 
     } // namespace hydra
 } // namespace glm
+
+#endif // PXR_VERSION > 2505

@@ -1,5 +1,7 @@
 #pragma once
 
+#if PXR_VERSION > 2505
+
 #include <pxr/imaging/hd/dataSourceLocator.h>
 #include <pxr/imaging/hd/retainedDataSource.h>
 
@@ -23,3 +25,5 @@ namespace glm
         };
     } // namespace hydra
 } // namespace glm
+
+#endif // PXR_VERSION > 2505
