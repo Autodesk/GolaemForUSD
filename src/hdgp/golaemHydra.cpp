@@ -187,6 +187,8 @@ namespace glm
                 CMP(furRenderPercent, kFurChanges);
                 CMP(furRefineLevel, kFurChanges);
 
+#undef CMP
+
                 return ret;
             }
 
