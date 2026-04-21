@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <float.h>
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
