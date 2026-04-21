@@ -53,7 +53,7 @@ namespace glm
 
             HdContainerDataSourceEditor editor(meshDataSource);
 
-            for (auto it : *_customPrimvars)
+            for (const auto& it : *_customPrimvars)
             {
                 editor.Set(
                     HdDataSourceLocator(it.first),

@@ -1022,7 +1022,7 @@ namespace glm
 
                     // do nothing if the entity has been killed or excluded
 
-                    auto id = simData->_entityIds[ientity];
+                    int64_t id = simData->_entityIds[ientity];
                     if (id < 0 || !entityIdsFilter(id))
                     {
                         continue;
@@ -1030,8 +1030,8 @@ namespace glm
 
                     // fetch the corresponding character
 
-                    auto entityType = simData->_entityTypes[ientity];
-                    auto characterIndex = simData->_characterIdx[ientity];
+                    uint16_t entityType = simData->_entityTypes[ientity];
+                    int32_t characterIndex = simData->_characterIdx[ientity];
                     const GolaemCharacter* character =
                         _factory->getGolaemCharacter(characterIndex);
 
@@ -1051,11 +1051,8 @@ namespace glm
 
                     if (_args.displayMode == golaemTokens->bbox || lodEnabled)
                     {
-                        const auto& animData = character->_converterMapping;
-                        const auto* rootBone =
-                            animData._skeletonDescription->getRootBone();
-                        auto rootBoneIndex = rootBone->getSpecificBoneIndex();
-                        auto boneCount = simData->_boneCount[entityType];
+                        int rootBoneIndex = character->_converterMapping._skeletonDescription->getRootBone()->getSpecificBoneIndex();
+                        uint16_t boneCount = simData->_boneCount[entityType];
 
                         frameDataIndex = rootBoneIndex + simData->_iBoneOffsetPerEntityType[entityType] + simData->_indexInEntityType[ientity] * boneCount;
 
@@ -1143,8 +1140,8 @@ namespace glm
 
             dataSources->reserve(totalCount);
 
-            auto characterIndex = simData->_characterIdx[entityIndex];
-            auto bakeIndex = simData->_entityToBakeIndex[entityIndex];
+            int32_t characterIndex = simData->_characterIdx[entityIndex];
+            int32_t bakeIndex = simData->_entityToBakeIndex[entityIndex];
 
             // shader attributes (int, float, string, vector)
 
@@ -1298,7 +1295,7 @@ namespace glm
             const GlmFrameData* frameData =
                 cachedSimulation.getFinalFrameData(frame, UINT32_MAX, true);
 
-            auto characterIndex = simData->_characterIdx[entityIndex];
+            int32_t characterIndex = simData->_characterIdx[entityIndex];
             const GolaemCharacter* character =
                 _factory->getGolaemCharacter(characterIndex);
 
@@ -1556,7 +1553,7 @@ namespace glm
                         meshKey.lodIndex = 0;
                     }
                     meshKey.meshIndex = meshXform._meshIndex;
-                    auto it = _rigidMeshCache.find(meshKey);
+                    const auto& it = _rigidMeshCache.find(meshKey);
                     if (it == _rigidMeshCache.end())
                     {
                         adapter = std::make_shared<FileMeshAdapter>(fileMesh);
@@ -1597,11 +1594,10 @@ namespace glm
                     // TODO: this is wrong! I don't know how to calculate the mesh's
                     // transformation matrix correctly.
 
-                    auto boneIndex = meshXform._rigidSkinningBoneId;
-                    auto entityIndex = inputData._entityIndex;
-                    auto entityType = simData->_entityTypes[entityIndex];
-                    auto boneCount = simData->_boneCount[entityType];
-                    auto frameDataIndex = boneIndex + simData->_iBoneOffsetPerEntityType[entityType] + simData->_indexInEntityType[entityIndex] * boneCount;
+                    uint32_t entityIndex = inputData._entityIndex;
+                    uint16_t entityType = simData->_entityTypes[entityIndex];
+                    uint16_t boneCount = simData->_boneCount[entityType];
+                    unsigned int frameDataIndex = meshXform._rigidSkinningBoneId + simData->_iBoneOffsetPerEntityType[entityType] + simData->_indexInEntityType[entityIndex] * boneCount;
 
                     // TODO: if rigid body support is enabled one day, implement a
                     // variant of SetTransform() with multiple samples for motion blur
@@ -1962,7 +1958,7 @@ namespace glm
 
             if (_args.displayMode == golaemTokens->bbox)
             {
-                auto it = _childIndices.find(childPrimPath);
+                const auto& it = _childIndices.find(childPrimPath);
                 if (it == _childIndices.end())
                 {
                     return result;
@@ -1991,7 +1987,7 @@ namespace glm
 
             else
             {
-                auto it = _childIndexPairs.find(childPrimPath);
+                const auto& it = _childIndexPairs.find(childPrimPath);
                 if (it == _childIndexPairs.end())
                 {
                     return result;

@@ -468,7 +468,7 @@ namespace glm
 
             if (_customPrimvars)
             {
-                for (auto it : *_customPrimvars)
+                for (const auto& it : *_customPrimvars)
                 {
                     dataNames.push_back(it.first);
                     dataSources.push_back(
