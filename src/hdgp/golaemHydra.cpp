@@ -678,21 +678,19 @@ namespace glm
                 {
                     break;
                 }
-                HdXformSchema xform =
-                    HdXformSchema::GetFromParent(prim.dataSource);
-                if (!xform)
+                HdXformSchema xform = HdXformSchema::GetFromParent(prim.dataSource);
+                if (xform)
                 {
-                    break;
-                }
-                HdMatrixDataSourceHandle mtxDs = xform.GetMatrix();
-                if (mtxDs)
-                {
-                    mtx = mtxDs->GetTypedValue(0) * mtx; // world matrix = parent world matrix * local matrix
-                }
-                HdBoolDataSourceHandle resetDs = xform.GetResetXformStack();
-                if (resetDs && resetDs->GetTypedValue(0))
-                {
-                    break;
+                    HdMatrixDataSourceHandle mtxDs = xform.GetMatrix();
+                    if (mtxDs)
+                    {
+                        mtx = mtxDs->GetTypedValue(0) * mtx; // world matrix = parent world matrix * local matrix
+                    }
+                    HdBoolDataSourceHandle resetDs = xform.GetResetXformStack();
+                    if (resetDs && resetDs->GetTypedValue(0))
+                    {
+                        break;
+                    }
                 }
                 path = path.GetParentPath();
             }
