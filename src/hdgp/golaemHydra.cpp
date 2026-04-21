@@ -37,7 +37,6 @@ USD_INCLUDES_END
 #include <glmSimulationCacheFactory.h>
 #include <glmSimulationCacheFactorySimulation.h>
 
-#include "glmUSD.h"
 #include "fbxMeshAdapter.h"
 #include "fileMeshAdapter.h"
 #include "fileMeshInstance.h"
