@@ -545,8 +545,9 @@ namespace glm
         }
 
         /*
-         * Called by Update() one time only, once the arguments (cache file, crowd field
-         * names, etc.) are known. We assume that the arguments never change.
+         * Called by Update() once the arguments (cache file, crowd field names, etc.)
+         * are known. This happens on the first cook, and may happen again if argument
+         * changes trigger a reload/recook and the crowd needs to be reinitialized.
          */
         void GolaemProcedural::InitCrowd(const HdSceneIndexBaseRefPtr& /*inputScene*/)
         {
