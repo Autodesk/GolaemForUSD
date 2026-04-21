@@ -52,9 +52,6 @@ It is a good idea to provide the prim's extent, because the plugin cannot set it
 by itself. The extent allows graphics applications to "frame" the prim, and it
 allows renderers to cull the prim if it is not visible.
 
-Note that you can parent a GolaemHydra prim to an xform, but Hydra ignores the
-transformations of the parent xform and of all its parents.
-
 
 Levels of Detail
 ----------------
