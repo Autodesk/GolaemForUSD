@@ -688,7 +688,7 @@ namespace glm
                 HdMatrixDataSourceHandle mtxDs = xform.GetMatrix();
                 if (mtxDs)
                 {
-                    mtx *= mtxDs->GetTypedValue(0);
+                    mtx = mtxDs->GetTypedValue(0) * mtx; // world matrix = parent world matrix * local matrix
                 }
                 HdBoolDataSourceHandle resetDs = xform.GetResetXformStack();
                 if (resetDs && resetDs->GetTypedValue(0))
