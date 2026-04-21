@@ -1,13 +1,20 @@
 #pragma once
 
+#include "glmUSD.h"
+
+USD_INCLUDES_START
+#include <pxr/pxr.h>
+USD_INCLUDES_END
 #if PXR_VERSION > 2505
 
 #include "fileMeshAdapter.h"
 #include "hydraGlobals.h"
 #include "meshDataSourceBase.h"
 
+USD_INCLUDES_START
 #include <pxr/usd/sdf/path.h>
 #include <pxr/base/tf/denseHashMap.h>
+USD_INCLUDES_END
 
 #include <memory>
 

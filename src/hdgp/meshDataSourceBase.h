@@ -1,9 +1,16 @@
 #pragma once
 
+#include "glmUSD.h"
+
+USD_INCLUDES_START
+#include <pxr/pxr.h>
+USD_INCLUDES_END
 #if PXR_VERSION > 2505
 
+USD_INCLUDES_START
 #include <pxr/imaging/hd/dataSourceLocator.h>
 #include <pxr/imaging/hd/retainedDataSource.h>
+USD_INCLUDES_END
 
 namespace glm
 {

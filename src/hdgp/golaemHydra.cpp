@@ -1,5 +1,11 @@
+#include "glmUSD.h"
+
+USD_INCLUDES_START
+#include <pxr/pxr.h>
+USD_INCLUDES_END
 #if PXR_VERSION > 2505
 
+USD_INCLUDES_START
 #include <pxr/imaging/hdGp/generativeProceduralPlugin.h>
 #include <pxr/imaging/hdGp/generativeProceduralPluginRegistry.h>
 
@@ -17,6 +23,7 @@
 
 #include <pxr/base/tf/debug.h>
 #include <pxr/base/tf/staticTokens.h>
+USD_INCLUDES_END
 
 #include <glmCrowdGcgCharacter.h>
 #include <glmCrowdFBXBaker.h>
@@ -1335,8 +1342,8 @@ namespace glm
 
             if (motionBlur)
             {
-                std::vector<double> motionBlurFrames;
-                std::vector<GlmFrameData*> motionBlurFrameDatas;
+                glm::PODArray<double> motionBlurFrames;
+                glm::PODArray<const GlmFrameData*> motionBlurFrameDatas;
                 glm::Array<HdSampledDataSource::Time> motionBlurShutterOffsets;
                 bool validMotionBlurSamples = true;
 
@@ -1345,7 +1352,7 @@ namespace glm
 
                 if (shutter[0] != 0.0)
                 {
-                    GlmFrameData* shutterFrameData =
+                    const GlmFrameData* shutterFrameData =
                         cachedSimulation.getFinalFrameData(
                             frame + shutter[0], UINT32_MAX, true);
                     if (shutterFrameData != nullptr)
@@ -1368,7 +1375,7 @@ namespace glm
                 }
                 if (validMotionBlurSamples && shutter[1] != 0.0)
                 {
-                    GlmFrameData* shutterFrameData =
+                    const GlmFrameData* shutterFrameData =
                         cachedSimulation.getFinalFrameData(
                             frame + shutter[1], UINT32_MAX, true);
                     if (shutterFrameData != nullptr)

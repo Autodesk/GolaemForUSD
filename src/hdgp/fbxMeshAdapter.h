@@ -1,16 +1,23 @@
 #pragma once
 
+#include "glmUSD.h"
+
+USD_INCLUDES_START
+#include <pxr/pxr.h>
+USD_INCLUDES_END
 #if PXR_VERSION > 2505
 
 #include "hydraGlobals.h"
 #include "meshDataSourceBase.h"
 
+USD_INCLUDES_START
 #include <pxr/imaging/hd/retainedDataSource.h>
 #include <pxr/usd/sdf/path.h>
 #include <pxr/base/gf/matrix4d.h>
 #include <pxr/base/gf/vec2f.h>
 #include <pxr/base/gf/vec3f.h>
 #include <pxr/base/vt/array.h>
+USD_INCLUDES_END
 
 #include <glmArray.h>
 

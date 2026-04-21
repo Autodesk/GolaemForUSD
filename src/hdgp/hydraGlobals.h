@@ -1,15 +1,22 @@
 #pragma once
 
+#include "glmUSD.h"
+
+USD_INCLUDES_START
+#include <pxr/pxr.h>
+USD_INCLUDES_END
 #if PXR_VERSION > 2505
 
 #include <glmArray.h>
 #include <glmVector3.h>
 
+USD_INCLUDES_START
 #include <pxr/imaging/hd/dataSource.h>
 #include <pxr/imaging/hd/dataSourceTypeDefs.h>
 #include <pxr/usd/sdf/path.h>
 #include <pxr/base/tf/denseHashMap.h>
 #include <pxr/base/vt/array.h>
+USD_INCLUDES_END
 
 #include <memory>
 

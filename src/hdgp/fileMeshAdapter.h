@@ -1,9 +1,15 @@
 #pragma once
 
+#include "glmUSD.h"
+
+USD_INCLUDES_START
+#include <pxr/pxr.h>
+USD_INCLUDES_END
 #if PXR_VERSION > 2505
 
 #include "hydraGlobals.h"
 
+USD_INCLUDES_START
 #include <pxr/imaging/hd/retainedDataSource.h>
 
 #include <pxr/base/gf/vec2f.h>
@@ -11,6 +17,7 @@
 #include <pxr/base/tf/hash.h>
 #include <pxr/base/tf/token.h>
 #include <pxr/base/vt/array.h>
+USD_INCLUDES_END
 
 #include <glmArray.h>
 #include <glmGeometryFile.h>
