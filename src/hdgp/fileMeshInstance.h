@@ -9,37 +9,40 @@
 
 #include <memory>
 
-namespace glmhydra
+namespace glm
 {
-
-    /*
-     * Adds xform, material and custom primvar data sources to the data sources for
-     * a mesh's topology and geometry (provided by FileMeshAdapter). This class is
-     * separated from FileMeshAdapter so that multiple instances can share the same
-     * mesh but with different transformations and materials.
-     */
-    class FileMeshInstance : public MeshDataSourceBase
+    namespace hydra
     {
-    public:
-        FileMeshInstance(
-            const std::shared_ptr<FileMeshAdapter>& adapter,
-            const PXR_NS::SdfPath& material,
-            const PrimvarDSMapRef& customPrimvars);
 
-        void SetTransform(const float pos[3], const float rot[4], float scale);
+        /*
+         * Adds xform, material and custom primvar data sources to the data sources for
+         * a mesh's topology and geometry (provided by FileMeshAdapter). This class is
+         * separated from FileMeshAdapter so that multiple instances can share the same
+         * mesh but with different transformations and materials.
+         */
+        class FileMeshInstance : public MeshDataSourceBase
+        {
+        public:
+            FileMeshInstance(
+                const std::shared_ptr<FileMeshAdapter>& adapter,
+                const PXR_NS::SdfPath& material,
+                const PrimvarDSMapRef& customPrimvars);
 
-        // TODO: variant of SetTransform() with shutter offsets
+            void SetTransform(const float pos[3], const float rot[4], float scale);
 
-        PXR_NS::HdContainerDataSourceHandle GetDataSource() const override;
-        PXR_NS::HdDataSourceLocatorSet GetVariableDataSources() const override;
+            // TODO: variant of SetTransform() with shutter offsets
 
-    private:
-        PXR_NS::HdContainerDataSourceHandle GetPrimvarsDataSource() const;
+            PXR_NS::HdContainerDataSourceHandle GetDataSource() const override;
+            PXR_NS::HdDataSourceLocatorSet GetVariableDataSources() const override;
 
-        std::shared_ptr<FileMeshAdapter> _adapter;
-        PXR_NS::SdfPath _material;
-        const PrimvarDSMapRef _customPrimvars;
-        PXR_NS::HdContainerDataSourceHandle _xform;
-    };
+        private:
+            PXR_NS::HdContainerDataSourceHandle GetPrimvarsDataSource() const;
 
-} // namespace glmhydra
+            std::shared_ptr<FileMeshAdapter> _adapter;
+            PXR_NS::SdfPath _material;
+            const PrimvarDSMapRef _customPrimvars;
+            PXR_NS::HdContainerDataSourceHandle _xform;
+        };
+
+    } // namespace hydra
+} // namespace glm

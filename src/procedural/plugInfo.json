@@ -25,7 +25,7 @@
                         "primary": true,
                         "target": "usd"
                     },
-                    "GolaemProceduralPlugin": {
+                    "glm::hydra::GolaemProceduralPlugin": {
                         "bases": [
                             "HdGpGenerativeProceduralPlugin"
                         ],
