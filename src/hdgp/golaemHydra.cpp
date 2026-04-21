@@ -1339,29 +1339,66 @@ namespace glm
 
             if (motionBlur)
             {
-                inputData._frames.reserve(3);
-                inputData._frameDatas.reserve(3);
+                std::vector<double> motionBlurFrames;
+                std::vector<GlmFrameData*> motionBlurFrameDatas;
+                glm::Array<HdSampledDataSource::Time> motionBlurShutterOffsets;
+                bool validMotionBlurSamples = true;
+
+                motionBlurFrames.reserve(3);
+                motionBlurFrameDatas.reserve(3);
+
                 if (shutter[0] != 0.0)
                 {
-                    inputData._frames.push_back(frame + shutter[0]);
-                    inputData._frameDatas.push_back(
+                    GlmFrameData* shutterFrameData =
                         cachedSimulation.getFinalFrameData(
-                            frame + shutter[0], UINT32_MAX, true));
-                    shutterOffsets.push_back(static_cast<float>(shutter[0]));
+                            frame + shutter[0], UINT32_MAX, true);
+                    if (shutterFrameData != nullptr)
+                    {
+                        motionBlurFrames.push_back(frame + shutter[0]);
+                        motionBlurFrameDatas.push_back(shutterFrameData);
+                        motionBlurShutterOffsets.push_back(
+                            static_cast<float>(shutter[0]));
+                    }
+                    else
+                    {
+                        validMotionBlurSamples = false;
+                    }
                 }
-                if (shutter[0] <= 0.0 && shutter[1] >= 0.0)
+                if (validMotionBlurSamples && shutter[0] <= 0.0 && shutter[1] >= 0.0)
                 {
-                    inputData._frames.push_back(frame);
-                    inputData._frameDatas.push_back(frameData);
+                    motionBlurFrames.push_back(frame);
+                    motionBlurFrameDatas.push_back(frameData);
+                    motionBlurShutterOffsets.push_back(0);
+                }
+                if (validMotionBlurSamples && shutter[1] != 0.0)
+                {
+                    GlmFrameData* shutterFrameData =
+                        cachedSimulation.getFinalFrameData(
+                            frame + shutter[1], UINT32_MAX, true);
+                    if (shutterFrameData != nullptr)
+                    {
+                        motionBlurFrames.push_back(frame + shutter[1]);
+                        motionBlurFrameDatas.push_back(shutterFrameData);
+                        motionBlurShutterOffsets.push_back(
+                            static_cast<float>(shutter[1]));
+                    }
+                    else
+                    {
+                        validMotionBlurSamples = false;
+                    }
+                }
+
+                if (validMotionBlurSamples && !motionBlurFrameDatas.empty())
+                {
+                    inputData._frames = motionBlurFrames;
+                    inputData._frameDatas = motionBlurFrameDatas;
+                    shutterOffsets = motionBlurShutterOffsets;
+                }
+                else
+                {
+                    inputData._frames.assign(1, frame);
+                    inputData._frameDatas.assign(1, frameData);
                     shutterOffsets.push_back(0);
-                }
-                if (shutter[1] != 0.0)
-                {
-                    inputData._frames.push_back(frame + shutter[1]);
-                    inputData._frameDatas.push_back(
-                        cachedSimulation.getFinalFrameData(
-                            frame + shutter[1], UINT32_MAX, true));
-                    shutterOffsets.push_back(static_cast<float>(shutter[1]));
                 }
             }
             else
