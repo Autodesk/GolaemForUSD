@@ -443,29 +443,18 @@ namespace glm
         void GetTokenArrayPrimvar(
             HdPrimvarsSchema& primvars, TfToken token, VtTokenArray& result)
         {
-            HdSampledDataSourceHandle src =
-                primvars.GetPrimvar(token).GetPrimvarValue();
+            HdSampledDataSourceHandle src = primvars.GetPrimvar(token).GetPrimvarValue();
 
             if (src)
             {
                 VtValue v = src->GetValue(0.0f);
                 if (v.IsHolding<TfToken>())
                 {
-                    const std::string& str = v.UncheckedGet<TfToken>().GetString();
-                    std::string::size_type pos, lastpos = 0;
-                    while ((pos = str.find(';', lastpos)) != std::string::npos)
+                    GlmString str = v.UncheckedGet<TfToken>().GetString().c_str();
+                    glm::Array<GlmString> glmArray = glm::stringToStringArray(str, ";");
+                    for (const GlmString& glmString : glmArray)
                     {
-                        result.push_back(TfToken(str.substr(lastpos, pos - lastpos)));
-                        lastpos = pos + 1;
-                    }
-                    if (result.empty())
-                    {
-                        result.push_back(v.UncheckedGet<TfToken>());
-                    }
-                    else
-                    {
-                        result.push_back(
-                            TfToken(str.substr(lastpos, str.size() - lastpos)));
+                        result.push_back(TfToken(glmString.c_str()));
                     }
                 }
             }
@@ -479,46 +468,26 @@ namespace glm
             HdSceneIndexPrim prim = inputScene->GetPrim(primPath);
             HdPrimvarsSchema primvars = HdPrimvarsSchema::GetFromParent(prim.dataSource);
 
-            GetTokenArrayPrimvar(
-                primvars, golaemTokens->crowdFields, result.crowdFields);
-            GetTypedPrimvar(
-                primvars, golaemTokens->cacheName, result.cacheName);
-            GetTypedPrimvar(
-                primvars, golaemTokens->cacheDir, result.cacheDir);
-            GetTypedPrimvar(
-                primvars, golaemTokens->characterFiles, result.characterFiles);
-            GetTypedPrimvar(
-                primvars, golaemTokens->entityIds, result.entityIds);
-            GetTypedPrimvar(
-                primvars, golaemTokens->enableLayout, result.enableLayout);
-            GetTypedPrimvar(
-                primvars, golaemTokens->layoutFiles, result.layoutFiles);
-            GetTypedPrimvar(
-                primvars, golaemTokens->terrainFile, result.terrainFile);
-            GetTypedPrimvar(
-                primvars, golaemTokens->renderPercent, result.renderPercent);
-            GetTypedPrimvar(
-                primvars, golaemTokens->displayMode, result.displayMode);
-            GetTypedPrimvar(
-                primvars, golaemTokens->geometryTag, result.geometryTag);
-            GetTypedPrimvar(
-                primvars, golaemTokens->dirmap, result.dirmap);
-            GetTypedPrimvar(
-                primvars, golaemTokens->materialAssignMode, result.materialAssignMode);
-            GetTypedPrimvar(
-                primvars, golaemTokens->enableMotionBlur, result.enableMotionBlur);
-            GetTypedPrimvar(
-                primvars, golaemTokens->defaultShutterOpen, result.defaultShutterOpen);
-            GetTypedPrimvar(
-                primvars, golaemTokens->defaultShutterClose, result.defaultShutterClose);
-            GetTypedPrimvar(
-                primvars, golaemTokens->enableLod, result.enableLod);
-            GetTypedPrimvar(
-                primvars, golaemTokens->enableFur, result.enableFur);
-            GetTypedPrimvar(
-                primvars, golaemTokens->furRenderPercent, result.furRenderPercent);
-            GetTypedPrimvar(
-                primvars, golaemTokens->furRefineLevel, result.furRefineLevel);
+            GetTokenArrayPrimvar(primvars, golaemTokens->crowdFields, result.crowdFields);
+            GetTypedPrimvar(primvars, golaemTokens->cacheName, result.cacheName);
+            GetTypedPrimvar(primvars, golaemTokens->cacheDir, result.cacheDir);
+            GetTypedPrimvar(primvars, golaemTokens->characterFiles, result.characterFiles);
+            GetTypedPrimvar(primvars, golaemTokens->entityIds, result.entityIds);
+            GetTypedPrimvar(primvars, golaemTokens->enableLayout, result.enableLayout);
+            GetTypedPrimvar(primvars, golaemTokens->layoutFiles, result.layoutFiles);
+            GetTypedPrimvar(primvars, golaemTokens->terrainFile, result.terrainFile);
+            GetTypedPrimvar(primvars, golaemTokens->renderPercent, result.renderPercent);
+            GetTypedPrimvar(primvars, golaemTokens->displayMode, result.displayMode);
+            GetTypedPrimvar(primvars, golaemTokens->geometryTag, result.geometryTag);
+            GetTypedPrimvar(primvars, golaemTokens->dirmap, result.dirmap);
+            GetTypedPrimvar(primvars, golaemTokens->materialAssignMode, result.materialAssignMode);
+            GetTypedPrimvar(primvars, golaemTokens->enableMotionBlur, result.enableMotionBlur);
+            GetTypedPrimvar(primvars, golaemTokens->defaultShutterOpen, result.defaultShutterOpen);
+            GetTypedPrimvar(primvars, golaemTokens->defaultShutterClose, result.defaultShutterClose);
+            GetTypedPrimvar(primvars, golaemTokens->enableLod, result.enableLod);
+            GetTypedPrimvar(primvars, golaemTokens->enableFur, result.enableFur);
+            GetTypedPrimvar(primvars, golaemTokens->furRenderPercent, result.furRenderPercent);
+            GetTypedPrimvar(primvars, golaemTokens->furRefineLevel, result.furRefineLevel);
 
             // a primvar cannot be a relationship, so we convert the materialPath
             // argument (a token) to an SdfPath, which can be relative to the procedural
