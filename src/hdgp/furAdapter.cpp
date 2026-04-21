@@ -159,7 +159,7 @@ namespace glm
                                 }
                                 else
                                 {
-                                    _widths.push_back(scale * group._widths[inputIndex]);
+                                    _widths.push_back(scale * group._widths[inputIndex + ivert]);
                                 }
                             }
 
@@ -172,40 +172,39 @@ namespace glm
                                 else
                                 {
                                     _uvs.emplace_back(
-                                        group._uvs[inputIndex][0],
-                                        group._uvs[inputIndex][1]);
+                                        group._uvs[inputIndex + ivert][0],
+                                        group._uvs[inputIndex + ivert][1]);
                                 }
-                            }
-
-                            for (size_t iProp = 0; iProp < floatPropCount; ++iProp)
-                            {
-                                float value = 0.f;
-                                if (group._floatProperties.size() == floatPropCount &&
-                                    iProp < group._floatProperties.size() &&
-                                    icurve < group._floatProperties[iProp].size())
-                                {
-                                    value = group._floatProperties[iProp][icurve];
-                                }
-                                floatPropValues[iProp].push_back(value);
-                            }
-
-                            for (size_t iProp = 0; iProp < vector3PropCount; ++iProp)
-                            {
-                                GfVec3f value(0.0f);
-                                if (group._vector3Properties.size() == vector3PropCount &&
-                                    iProp < group._vector3Properties.size() &&
-                                    icurve < group._vector3Properties[iProp].size())
-                                {
-                                    value.Set(group._vector3Properties[iProp][icurve].getFloatValues());
-                                }
-                                vector3PropValues[iProp].push_back(value);
                             }
 
                             ++outputIndex;
                         }
+                        for (size_t iProp = 0; iProp < floatPropCount; ++iProp)
+                        {
+                            float value = 0.f;
+                            if (group._floatProperties.size() == floatPropCount &&
+                                iProp < group._floatProperties.size() &&
+                                icurve < group._floatProperties[iProp].size())
+                            {
+                                value = group._floatProperties[iProp][icurve];
+                            }
+                            floatPropValues[iProp].push_back(value);
+                        }
+
+                        for (size_t iProp = 0; iProp < vector3PropCount; ++iProp)
+                        {
+                            GfVec3f value(0.0f);
+                            if (group._vector3Properties.size() == vector3PropCount &&
+                                iProp < group._vector3Properties.size() &&
+                                icurve < group._vector3Properties[iProp].size())
+                            {
+                                value.Set(group._vector3Properties[iProp][icurve].getFloatValues());
+                            }
+                            vector3PropValues[iProp].push_back(value);
+                        }
                         incrementFurCounter += _furIncrement;
                     }
-                    ++inputIndex;
+                    inputIndex += nvert;
                 }
             }
 
