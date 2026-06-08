@@ -2303,13 +2303,12 @@ namespace glm
                 size_t maxEntities = (size_t)floorf(simuData->_entityCount * renderPercent);
                 for (uint32_t iEntity = 0; iEntity < simuData->_entityCount; ++iEntity)
                 {
-                    int64_t entityId = simuData->_entityIds[iEntity];
-                    if (entityId < 0)
+                    if (!crowdio::isEntityValid(simuData, iEntity))
                     {
-                        // entity was probably killed
                         continue;
                     }
 
+                    int64_t entityId = simuData->_entityIds[iEntity];
                     if (!entityIdsFilter(entityId))
                     {
                         // entity is filtered out
