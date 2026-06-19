@@ -2173,53 +2173,57 @@ namespace glm
             else if (displayMode == GolaemDisplayMode::BOUNDING_BOX)
             {
                 _params.glmLodMode = 0; // no lod in bounding box mode
-                _skinMeshTemplateDataPerCharPerGeomFile.resize(1);
-                auto& characterTemplateData = _skinMeshTemplateDataPerCharPerGeomFile[0];
-                characterTemplateData.resize(1);
-                auto& lodTemplateData = characterTemplateData[0];
-                SkinMeshTemplateData::SP templateData = new SkinMeshTemplateData();
-                lodTemplateData[{0, 0}] = templateData;
-                templateData->faceVertexCounts.resize(6);
-                for (size_t iFace = 0; iFace < 6; ++iFace)
+                int charCount = _factory->getGolaemCharacters().sizeInt();
+                _skinMeshTemplateDataPerCharPerGeomFile.resize(charCount);
+                for (int iChar = 0; iChar < charCount; ++iChar)
                 {
-                    templateData->faceVertexCounts[iFace] = 4;
+                    auto& characterTemplateData = _skinMeshTemplateDataPerCharPerGeomFile[iChar];
+                    characterTemplateData.resize(1);
+                    auto& lodTemplateData = characterTemplateData[0];
+                    SkinMeshTemplateData::SP templateData = new SkinMeshTemplateData();
+                    lodTemplateData[{0, 0}] = templateData;
+                    templateData->faceVertexCounts.resize(6);
+                    for (size_t iFace = 0; iFace < 6; ++iFace)
+                    {
+                        templateData->faceVertexCounts[iFace] = 4;
+                    }
+
+                    // face 0
+                    templateData->faceVertexIndices.push_back(3);
+                    templateData->faceVertexIndices.push_back(2);
+                    templateData->faceVertexIndices.push_back(1);
+                    templateData->faceVertexIndices.push_back(0);
+
+                    // face 1
+                    templateData->faceVertexIndices.push_back(2);
+                    templateData->faceVertexIndices.push_back(6);
+                    templateData->faceVertexIndices.push_back(5);
+                    templateData->faceVertexIndices.push_back(1);
+
+                    // face 2
+                    templateData->faceVertexIndices.push_back(3);
+                    templateData->faceVertexIndices.push_back(7);
+                    templateData->faceVertexIndices.push_back(6);
+                    templateData->faceVertexIndices.push_back(2);
+
+                    // face 3
+                    templateData->faceVertexIndices.push_back(0);
+                    templateData->faceVertexIndices.push_back(4);
+                    templateData->faceVertexIndices.push_back(7);
+                    templateData->faceVertexIndices.push_back(3);
+
+                    // face 4
+                    templateData->faceVertexIndices.push_back(1);
+                    templateData->faceVertexIndices.push_back(5);
+                    templateData->faceVertexIndices.push_back(4);
+                    templateData->faceVertexIndices.push_back(0);
+
+                    // face 5
+                    templateData->faceVertexIndices.push_back(5);
+                    templateData->faceVertexIndices.push_back(6);
+                    templateData->faceVertexIndices.push_back(7);
+                    templateData->faceVertexIndices.push_back(4);
                 }
-
-                // face 0
-                templateData->faceVertexIndices.push_back(3);
-                templateData->faceVertexIndices.push_back(2);
-                templateData->faceVertexIndices.push_back(1);
-                templateData->faceVertexIndices.push_back(0);
-
-                // face 1
-                templateData->faceVertexIndices.push_back(2);
-                templateData->faceVertexIndices.push_back(6);
-                templateData->faceVertexIndices.push_back(5);
-                templateData->faceVertexIndices.push_back(1);
-
-                // face 2
-                templateData->faceVertexIndices.push_back(3);
-                templateData->faceVertexIndices.push_back(7);
-                templateData->faceVertexIndices.push_back(6);
-                templateData->faceVertexIndices.push_back(2);
-
-                // face 3
-                templateData->faceVertexIndices.push_back(0);
-                templateData->faceVertexIndices.push_back(4);
-                templateData->faceVertexIndices.push_back(7);
-                templateData->faceVertexIndices.push_back(3);
-
-                // face 4
-                templateData->faceVertexIndices.push_back(1);
-                templateData->faceVertexIndices.push_back(5);
-                templateData->faceVertexIndices.push_back(4);
-                templateData->faceVertexIndices.push_back(0);
-
-                // face 5
-                templateData->faceVertexIndices.push_back(5);
-                templateData->faceVertexIndices.push_back(6);
-                templateData->faceVertexIndices.push_back(7);
-                templateData->faceVertexIndices.push_back(4);
             }
 
             glm::IdsFilter entityIdsFilter(_params.glmEntityIds.GetText());
@@ -3855,8 +3859,93 @@ namespace glm
 
                 auto& lodTemplateData = characterTemplateData[0];
                 meshData->templateData = lodTemplateData.at({0, 0});
-                meshData->points = meshData->templateData->defaultPoints;
-                meshData->normals = meshData->templateData->defaultNormals;
+
+                // compute the bounding box of the current entity
+                GfVec3f halfExtents;
+                _getCharacterExtent(entityData, halfExtents);
+
+                // create the shape of the bounding box
+                meshData->points.resize(8);
+
+                meshData->points[0].Set(
+                    -halfExtents[0],
+                    -halfExtents[1],
+                    +halfExtents[2]);
+
+                meshData->points[1].Set(
+                    +halfExtents[0],
+                    -halfExtents[1],
+                    +halfExtents[2]);
+
+                meshData->points[2].Set(
+                    +halfExtents[0],
+                    -halfExtents[1],
+                    -halfExtents[2]);
+
+                meshData->points[3].Set(
+                    -halfExtents[0],
+                    -halfExtents[1],
+                    -halfExtents[2]);
+
+                meshData->points[4].Set(
+                    -halfExtents[0],
+                    +halfExtents[1],
+                    +halfExtents[2]);
+
+                meshData->points[5].Set(
+                    +halfExtents[0],
+                    +halfExtents[1],
+                    +halfExtents[2]);
+
+                meshData->points[6].Set(
+                    +halfExtents[0],
+                    +halfExtents[1],
+                    -halfExtents[2]);
+
+                meshData->points[7].Set(
+                    -halfExtents[0],
+                    +halfExtents[1],
+                    -halfExtents[2]);
+
+                meshData->normals.resize(24);
+
+                int vertexIdx = 0;
+
+                // face 0
+                for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
+                {
+                    meshData->normals[vertexIdx].Set(0, -1, 0);
+                }
+
+                // face 1
+                for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
+                {
+                    meshData->normals[vertexIdx].Set(1, 0, 0);
+                }
+
+                // face 2
+                for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
+                {
+                    meshData->normals[vertexIdx].Set(0, 0, -1);
+                }
+
+                // face 3
+                for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
+                {
+                    meshData->normals[vertexIdx].Set(-1, 0, 0);
+                }
+
+                // face 4
+                for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
+                {
+                    meshData->normals[vertexIdx].Set(0, 0, 1);
+                }
+
+                // face 5
+                for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
+                {
+                    meshData->normals[vertexIdx].Set(0, 1, 0);
+                }
             }
             else if (displayMode == GolaemDisplayMode::SKINMESH)
             {
@@ -4272,96 +4361,10 @@ namespace glm
             meshMapData.gchaMeshId = 0;
             meshMapData.meshMaterialIndex = 0;
             meshMapData.entityData = entityData;
-            meshMapData.templateData = _skinMeshTemplateDataPerCharPerGeomFile[0][0].at({0, 0});
+            meshMapData.templateData = _skinMeshTemplateDataPerCharPerGeomFile[entityData->inputGeoData._characterIdx][0].at({0, 0});
 
-            // compute the bounding box of the current entity
-            GfVec3f halfExtents;
-            _getCharacterExtent(entityData, halfExtents);
-
-            // create the shape of the bounding box
-            VtVec3fArray& points = meshMapData.templateData->defaultPoints;
-            points.resize(8);
-
-            points[0].Set(
-                -halfExtents[0],
-                -halfExtents[1],
-                +halfExtents[2]);
-
-            points[1].Set(
-                +halfExtents[0],
-                -halfExtents[1],
-                +halfExtents[2]);
-
-            points[2].Set(
-                +halfExtents[0],
-                -halfExtents[1],
-                -halfExtents[2]);
-
-            points[3].Set(
-                -halfExtents[0],
-                -halfExtents[1],
-                -halfExtents[2]);
-
-            points[4].Set(
-                -halfExtents[0],
-                +halfExtents[1],
-                +halfExtents[2]);
-
-            points[5].Set(
-                +halfExtents[0],
-                +halfExtents[1],
-                +halfExtents[2]);
-
-            points[6].Set(
-                +halfExtents[0],
-                +halfExtents[1],
-                -halfExtents[2]);
-
-            points[7].Set(
-                -halfExtents[0],
-                +halfExtents[1],
-                -halfExtents[2]);
-
-            VtVec3fArray& vertexNormals = meshMapData.templateData->defaultNormals;
-            vertexNormals.resize(24);
-
-            int vertexIdx = 0;
-
-            // face 0
-            for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
-            {
-                vertexNormals[vertexIdx].Set(0, -1, 0);
-            }
-
-            // face 1
-            for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
-            {
-                vertexNormals[vertexIdx].Set(1, 0, 0);
-            }
-
-            // face 2
-            for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
-            {
-                vertexNormals[vertexIdx].Set(0, 0, -1);
-            }
-
-            // face 3
-            for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
-            {
-                vertexNormals[vertexIdx].Set(-1, 0, 0);
-            }
-
-            // face 4
-            for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
-            {
-                vertexNormals[vertexIdx].Set(0, 0, 1);
-            }
-
-            // face 5
-            for (int iVtx = 0; iVtx < 4; ++iVtx, ++vertexIdx)
-            {
-                vertexNormals[vertexIdx].Set(0, 1, 0);
-            }
+            meshMapData.templateData->defaultPoints.assign(8, GfVec3f(0.0f, 0.0f, 0.0f));
+            meshMapData.templateData->defaultNormals.assign(24, GfVec3f(0.0f, 0.0f, 0.0f));
         }
 
         //-----------------------------------------------------------------------------
