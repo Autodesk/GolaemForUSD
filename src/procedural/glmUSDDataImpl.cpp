@@ -2223,6 +2223,9 @@ namespace glm
                     templateData->faceVertexIndices.push_back(6);
                     templateData->faceVertexIndices.push_back(7);
                     templateData->faceVertexIndices.push_back(4);
+
+                    templateData->defaultPoints.assign(8, GfVec3f(0.0f, 0.0f, 0.0f));
+                    templateData->defaultNormals.assign(24, GfVec3f(0.0f, 0.0f, 0.0f));
                 }
             }
 
@@ -4362,9 +4365,6 @@ namespace glm
             meshMapData.meshMaterialIndex = 0;
             meshMapData.entityData = entityData;
             meshMapData.templateData = _skinMeshTemplateDataPerCharPerGeomFile[entityData->inputGeoData._characterIdx][0].at({0, 0});
-
-            meshMapData.templateData->defaultPoints.assign(8, GfVec3f(0.0f, 0.0f, 0.0f));
-            meshMapData.templateData->defaultNormals.assign(24, GfVec3f(0.0f, 0.0f, 0.0f));
         }
 
         //-----------------------------------------------------------------------------
