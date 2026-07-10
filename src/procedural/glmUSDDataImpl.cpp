@@ -1447,18 +1447,6 @@ namespace glm
                 return false;
             }
 
-            // First time sample is always _startFrame.
-            if (time <= _startFrame)
-            {
-                *tLower = *tUpper = _startFrame;
-                return true;
-            }
-            // Last time sample will always be _endFrame.
-            if (time >= _endFrame)
-            {
-                *tLower = *tUpper = _endFrame;
-                return true;
-            }
             // set the lower and upper time to the same value
             *tLower = *tUpper = time;
             return true;
