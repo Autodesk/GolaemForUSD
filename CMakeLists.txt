@@ -189,24 +189,30 @@ if(GOLAEMUSD_STANDALONE_BUILD)
     target_link_libraries(${PROJECT_NAME} ${GOLAEMDEVKIT_LIBS} )
 
     if(BUILD_USD_HOUDINI)
-        # from Houdini toolkit/samples/USD/CMakeLists.txt
-        if(MSVC)
+        target_link_libraries( ${PROJECT_NAME}
+            Houdini # Standard Houdini libraries
+            Houdini::Dep::pxr_ar
+            Houdini::Dep::pxr_arch
+            Houdini::Dep::pxr_gf
+            Houdini::Dep::pxr_js
+            Houdini::Dep::pxr_kind
+            Houdini::Dep::pxr_pcp
+            Houdini::Dep::pxr_plug
+            Houdini::Dep::pxr_sdf
+            Houdini::Dep::pxr_tf
+            Houdini::Dep::pxr_usd
+            Houdini::Dep::pxr_usdGeom
+            Houdini::Dep::pxr_vt
+            Python::Module
+        )
+        if (_houdini_release_version VERSION_LESS "21.0")
             target_link_libraries( ${PROJECT_NAME}
-                Houdini # Standard Houdini libraries
-                HoudiniThirdParty # Standard Houdini third party libraries
+                Houdini::Dep::hboost_python
             )
-        else()
-            # Link against Houdini libraries (including USD)
-            if ( DEFINED ENV{HOUDINI_HDK_LINK_GUSD} )
-                target_link_libraries( ${PROJECT_NAME}
-                    Houdini					# Standard Houdini libraries
-                    ${_houdini_hfs_root}/dsolib/libgusd.so
-                )
-            else ()
-                target_link_libraries( ${PROJECT_NAME}
-                    Houdini			        # Standard Houdini libraries
-                )
-            endif ()
+        else ()
+            target_link_libraries( ${PROJECT_NAME}
+                Houdini::Dep::pxr_python
+            )
         endif()
     else()
         target_link_libraries( ${PROJECT_NAME} hdGp usd usdGeom)
@@ -303,47 +309,30 @@ else()
     endif()
 
     if(BUILD_USD_HOUDINI)
-        # from Houdini toolkit/samples/USD/CMakeLists.txt
-        if(MSVC)
-            set(_houdini_link_libraries_ 
-                Houdini # Standard Houdini libraries
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libgusd.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_ar.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_arch.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_gf.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_js.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_kind.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_pcp.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_plug.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_sdf.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_tf.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usd.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdGeom.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdRi.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdShade.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_usdUtils.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_vt.lib
-                ${_houdini_hfs_root}/custom/houdini/dsolib/libpxr_work.lib
-                Python::Module
+        target_link_libraries( ${PROJECT_NAME}
+            Houdini # Standard Houdini libraries
+            Houdini::Dep::pxr_ar
+            Houdini::Dep::pxr_arch
+            Houdini::Dep::pxr_gf
+            Houdini::Dep::pxr_js
+            Houdini::Dep::pxr_kind
+            Houdini::Dep::pxr_pcp
+            Houdini::Dep::pxr_plug
+            Houdini::Dep::pxr_sdf
+            Houdini::Dep::pxr_tf
+            Houdini::Dep::pxr_usd
+            Houdini::Dep::pxr_usdGeom
+            Houdini::Dep::pxr_vt
+            Python::Module
+        )
+        if (_houdini_release_version VERSION_LESS "21.0")
+            target_link_libraries( ${PROJECT_NAME}
+                Houdini::Dep::hboost_python
             )
-
-            set(_houdini_link_libraries_
-                ${_houdini_link_libraries_}
-                ${_houdini_hfs_root}/custom/houdini/dsolib/hboost_python${PYTHON_VERSION}${PYTHON_SUBVERSION}-mt-x64.lib)
-                
-            target_link_libraries( ${PROJECT_NAME} ${_houdini_link_libraries_})
-        else()
-            # Link against Houdini libraries (including USD)
-            if ( DEFINED ENV{HOUDINI_HDK_LINK_GUSD} )
-                target_link_libraries( ${PROJECT_NAME}
-                    Houdini					# Standard Houdini libraries
-                    ${_houdini_hfs_root}/dsolib/libgusd.so
-                )
-            else ()
-                target_link_libraries( ${PROJECT_NAME}
-                    Houdini			        # Standard Houdini libraries
-                )
-            endif ()
+        else ()
+            target_link_libraries( ${PROJECT_NAME}
+                Houdini::Dep::pxr_python
+            )
         endif()
     elseif(BUILD_USD_KATANA)
         if(KATANA_VERSION VERSION_GREATER_EQUAL "5.0")
