@@ -7,29 +7,26 @@
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 #
 # Description :
-#   This scripts is responsible for finding and configuring variables to use 'FbxSdk' package.
+#   This script is responsible for finding and configuring variables to use 'FbxSdk' package.
 #
 # Output :
 # - FBXSDK_FOUND = FbxSdk found on this system ?
 # - FBXSDK_ROOTDIR = FbxSdk root directory
-#-  FBXSDK_INCDIR = FbxSdk headers directory
-#-  FBXSDK_BINDIR = FbxSdk binaries directory
+# - FBXSDK_INCDIR = FbxSdk headers directory
+# - FBXSDK_BINDIR = FbxSdk binaries directory
 # - FBXSDK_BINS = FbxSdk binaries
 # - FBXSDK_LIBS = FbxSdk libraries
 # - FBXSDK_DEFINITIONS = FbxSdk compiler definitions for all configurations
-#
-# Warning :
-#   Calling this script first requires including macros definitions designed for Golaem projects (include file "GolaemMacros.cmake")
 
 if( ( "${FBXSDK_FOUND}" STREQUAL "" ) OR ( NOT FBXSDK_FOUND ) )
 	set(USE_HOUDINI_FBX FALSE)
 
-	if(BUILD_HOUDINI AND NOT "${HOUDINI_VERSION}" STREQUAL "18.5")
+	if(BUILD_HOUDINI AND "${Houdini_VERSION}" VERSION_GREATER_EQUAL "19.0")
 		set(USE_HOUDINI_FBX TRUE)
-		message( "Using FbxSdk from Houdini ${HOUDINI_VERSION}" )
+		message( "Using FbxSdk from Houdini ${Houdini_VERSION}" )
 	else()
 		if("${FBXSDK_VERSION}" STREQUAL "")
-			set( FBXSDK_VERSION "2020.3.7" )
+			set( FBXSDK_VERSION "2020.3.9" )
 			message( "Setting FbxSdk version to ${FBXSDK_VERSION} because it was not forced" )
 		else()
 			message( "Using FbxSdk version ${FBXSDK_VERSION}" )
@@ -37,13 +34,7 @@ if( ( "${FBXSDK_FOUND}" STREQUAL "" ) OR ( NOT FBXSDK_FOUND ) )
 	endif()
 
 	if(USE_HOUDINI_FBX)
-		set(FBXSDK_EXTERNALS_PATH "${HOUDINI_EXTERNALS_PATH}")
-
-		if(MSVC)
-			set(FBXSDK_LIBFILE_SUBDIR "custom/houdini/dsolib")
-		else()
-			set(FBXSDK_LIBFILE_SUBDIR "dsolib")
-		endif()
+		set(FBXSDK_EXTERNALS_PATH "${Houdini_DIR}/../..")
 	else()
 		set(FBXSDK_EXTERNALS_PATH "${GLM_EXTERNALS_HOME}/fbxsdk/fbxsdk-${FBXSDK_VERSION}")
 		if(MSVC)
@@ -133,8 +124,7 @@ if( ( "${FBXSDK_FOUND}" STREQUAL "" ) OR ( NOT FBXSDK_FOUND ) )
 				set_property( TARGET uuid PROPERTY IMPORTED_LOCATION "${UUID_PATH}" )
 				message( "'FbxSdk' will link with uuid found in ${UUID_PATH}" )
 			else()
-				message( "libUUID not found while searching for dependency 'FbxSdk'" )
-				report_message( "ERROR" "libUUID not found while searching for dependency 'FbxSdk'" )
+				message(FATAL_ERROR "libUUID not found while searching for dependency 'FbxSdk'" )
 			endif()
 
 			#link libxml2 lib
@@ -148,7 +138,7 @@ if( ( "${FBXSDK_FOUND}" STREQUAL "" ) OR ( NOT FBXSDK_FOUND ) )
 				message( "'FbxSdk' will link with libxml2 found in ${LIBXML2_PATH}" )
 			else()
 				message( "libxml2 not found while searching for dependency 'FbxSdk'" )
-				report_message( "ERROR" "libxml2 not found while searching for dependency 'FbxSdk'" )
+				message(FATAL_ERROR "libxml2 not found while searching for dependency 'FbxSdk'" )
 			endif()
 
 			#link zlib
@@ -162,7 +152,7 @@ if( ( "${FBXSDK_FOUND}" STREQUAL "" ) OR ( NOT FBXSDK_FOUND ) )
 				message( "'FbxSdk' will link with zlib found in ${ZLIB_PATH}" )
 			else()
 				message( "zlib not found while searching for dependency 'FbxSdk'" )
-				report_message( "ERROR" "zlib not found while searching for dependency 'FbxSdk'" )
+				message(FATAL_ERROR "zlib not found while searching for dependency 'FbxSdk'" )
 			endif()
 		endif()
 
@@ -171,6 +161,7 @@ if( ( "${FBXSDK_FOUND}" STREQUAL "" ) OR ( NOT FBXSDK_FOUND ) )
 		endif()
 	else()
 		set( FBXSDK_FOUND OFF )
+        message(FATAL_ERROR "FbxSdk not found. Please set FBXSDK_ROOTDIR to the FbxSdk root directory (that contains at least 'include' and 'lib' subdirectories)." )
 	endif()
 
 	if(NOT MSVC AND NOT USE_HOUDINI_FBX)
