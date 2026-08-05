@@ -57,7 +57,6 @@ namespace glm
             _skinMeshEntityPropertyTokens,
             ((xformOpOrder, "xformOpOrder"))
             ((xformOpTranslate, "xformOp:translate"))
-            ((displayColor, "primvars:displayColor"))
             ((visibility, "visibility"))
             ((entityId, "entityId"))
             ((extentsHint, "extentsHint"))
@@ -176,9 +175,6 @@ namespace glm
 
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->xformOpOrder].defaultValue = VtValue(VtTokenArray({_skinMeshEntityPropertyTokens->xformOpTranslate}));
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->xformOpOrder].isAnimated = false;
-
-            (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->displayColor].defaultValue = VtValue(VtVec3fArray({GfVec3f(1, 0.5, 0)}));
-            (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->displayColor].isAnimated = false;
 
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->extentsHint].defaultValue = VtValue(VtVec3fArray({GfVec3f(-0.5, -0.5, -0.5), GfVec3f(0.5, 0.5, 0.5)}));
             (*_skinMeshEntityProperties)[_skinMeshEntityPropertyTokens->extentsHint].isAnimated = false;
@@ -502,6 +498,23 @@ namespace glm
                 _furPropertyTypes[1] = SdfSchema::GetInstance().FindType(value).GetAsToken();
             }
 
+            _meshAttrTypes.resize(3);
+            {
+                VtIntArray intArrayValue;
+                VtValue value(intArrayValue);
+                _meshAttrTypes[0] = SdfSchema::GetInstance().FindType(value).GetAsToken();
+            }
+            {
+                VtFloatArray floatArrayValue;
+                VtValue value(floatArrayValue);
+                _meshAttrTypes[1] = SdfSchema::GetInstance().FindType(value).GetAsToken();
+            }
+            {
+                VtVec3fArray vectorArrayValue;
+                VtValue value(vectorArrayValue);
+                _meshAttrTypes[2] = SdfSchema::GetInstance().FindType(value).GetAsToken();
+            }
+
             _InitFromParams();
         }
 
@@ -618,6 +631,15 @@ namespace glm
                     {
                         if (TfMapLookupPtr((*entityDataPtr)->ppAttrIndexes, nameToken) != NULL ||
                             TfMapLookupPtr((*entityDataPtr)->shaderAttrIndexes, nameToken) != NULL)
+                        {
+                            return SdfSpecTypeAttribute;
+                        }
+                    }
+                    else if (const SkinMeshMapData* meshMapData = TfMapLookupPtr(_skinMeshDataMap, primPath))
+                    {
+                        if (TfMapLookupPtr(meshMapData->templateData->intMeshAttributes, nameToken) != NULL ||
+                            TfMapLookupPtr(meshMapData->templateData->floatMeshAttributes, nameToken) != NULL ||
+                            TfMapLookupPtr(meshMapData->templateData->vector3MeshAttributes, nameToken) != NULL)
                         {
                             return SdfSpecTypeAttribute;
                         }
@@ -927,10 +949,22 @@ namespace glm
                         {
                             RETURN_TRUE_WITH_OPTIONAL_VALUE(_skinMeshLodPropertyTokens->allTokens);
                         }
-                        if (TfMapLookupPtr(_skinMeshDataMap, path) != NULL)
+                        if (const SkinMeshMapData* meshMapData = TfMapLookupPtr(_skinMeshDataMap, path))
                         {
                             std::vector<TfToken> meshTokens = _skinMeshPropertyTokens->allTokens;
                             meshTokens.insert(meshTokens.end(), _skinMeshRelationshipTokens->allTokens.begin(), _skinMeshRelationshipTokens->allTokens.end());
+                            for (const auto& itAttr : meshMapData->templateData->intMeshAttributes)
+                            {
+                                meshTokens.push_back(itAttr.first);
+                            }
+                            for (const auto& itAttr : meshMapData->templateData->floatMeshAttributes)
+                            {
+                                meshTokens.push_back(itAttr.first);
+                            }
+                            for (const auto& itAttr : meshMapData->templateData->vector3MeshAttributes)
+                            {
+                                meshTokens.push_back(itAttr.first);
+                            }
                             RETURN_TRUE_WITH_OPTIONAL_VALUE(meshTokens);
                         }
                         if (const FurMapData* furMapData = TfMapLookupPtr(_furDataMap, path))
@@ -941,9 +975,9 @@ namespace glm
                             {
                                 furTokens.push_back(itFloatProp.first);
                             }
-                            for (const auto& itVectorProp : furMapData->templateData->vector3Properties)
+                            for (const auto& itVector3Prop : furMapData->templateData->vector3Properties)
                             {
-                                furTokens.push_back(itVectorProp.first);
+                                furTokens.push_back(itVector3Prop.first);
                             }
                             RETURN_TRUE_WITH_OPTIONAL_VALUE(furTokens);
                         }
@@ -1082,6 +1116,27 @@ namespace glm
                             return;
                         }
                     }
+                    for (const auto& itAttr : it.second.templateData->intMeshAttributes)
+                    {
+                        if (!visitor->VisitSpec(data, it.first.AppendProperty(itAttr.first)))
+                        {
+                            return;
+                        }
+                    }
+                    for (const auto& itAttr : it.second.templateData->floatMeshAttributes)
+                    {
+                        if (!visitor->VisitSpec(data, it.first.AppendProperty(itAttr.first)))
+                        {
+                            return;
+                        }
+                    }
+                    for (const auto& itAttr : it.second.templateData->vector3MeshAttributes)
+                    {
+                        if (!visitor->VisitSpec(data, it.first.AppendProperty(itAttr.first)))
+                        {
+                            return;
+                        }
+                    }
                 }
                 // Visit the property specs which exist only on entity fur prims.
                 for (auto& it : _furDataMap)
@@ -1212,10 +1267,18 @@ namespace glm
                                 // Include time sample field if the property is animated.
                                 if (propInfo->isAnimated)
                                 {
+                                    if (propInfo->hasInterpolation)
+                                    {
+                                        return animInterpPropFields;
+                                    }
                                     return animPropFields;
                                 }
                                 else
                                 {
+                                    if (propInfo->hasInterpolation)
+                                    {
+                                        return nonAnimInterpPropFields;
+                                    }
                                     return nonAnimPropFields;
                                 }
                             }
@@ -1304,6 +1367,15 @@ namespace glm
                             {
                                 // pp or shader attributes are animated
                                 return animPropFields;
+                            }
+                        }
+                        else if (const SkinMeshMapData* meshMapData = TfMapLookupPtr(_skinMeshDataMap, primPath))
+                        {
+                            if (TfMapLookupPtr(meshMapData->templateData->intMeshAttributes, nameToken) ||
+                                TfMapLookupPtr(meshMapData->templateData->floatMeshAttributes, nameToken) ||
+                                TfMapLookupPtr(meshMapData->templateData->vector3MeshAttributes, nameToken))
+                            {
+                                return nonAnimInterpPropFields; // custom mesh properties have interpolation but are not animated
                             }
                         }
                     }
@@ -1666,8 +1738,8 @@ namespace glm
                 {
                     prevFrameData = _ComputeSkinMeshEntity(entityData, frame - 1.0);
                 }
-                SkinMeshEntityFrameData::SP entityFrameData = _ComputeSkinMeshEntity(entityData, frame);
-                _ComputeEntityVelocities(entityFrameData, prevFrameData);
+                SkinMeshEntityFrameData::SP skinMeshEntityFrameData = _ComputeSkinMeshEntity(entityData, frame);
+                _ComputeEntityVelocities(skinMeshEntityFrameData, prevFrameData);
 
                 if (isEntityPath)
                 {
@@ -1675,25 +1747,25 @@ namespace glm
                     if (nameToken == _skinMeshEntityPropertyTokens->xformOpTranslate)
                     {
                         // Animated position, anchored at the prim's layout position.
-                        RETURN_TRUE_WITH_OPTIONAL_VALUE(entityFrameData->pos);
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(skinMeshEntityFrameData->pos);
                     }
                     if (nameToken == _skinMeshEntityPropertyTokens->visibility)
                     {
-                        RETURN_TRUE_WITH_OPTIONAL_VALUE(entityFrameData->enabled ? UsdGeomTokens->inherited : UsdGeomTokens->invisible);
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(skinMeshEntityFrameData->enabled ? UsdGeomTokens->inherited : UsdGeomTokens->invisible);
                     }
                     if (nameToken == _skinMeshEntityPropertyTokens->geometryFileId)
                     {
-                        RETURN_TRUE_WITH_OPTIONAL_VALUE(entityFrameData->geometryFileIdx);
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(skinMeshEntityFrameData->geometryFileIdx);
                     }
                     if (nameToken == _skinMeshEntityPropertyTokens->lodName)
                     {
-                        RETURN_TRUE_WITH_OPTIONAL_VALUE(entityFrameData->lodName);
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(skinMeshEntityFrameData->lodName);
                     }
-                    return _QueryEntityAttributes(entityFrameData, nameToken, value);
+                    return _QueryEntityAttributes(skinMeshEntityFrameData, nameToken, value);
                 }
                 else if (isMeshLodPath)
                 {
-                    SkinMeshLodData::SP meshLodData = entityFrameData->meshLodData[lodIndex];
+                    SkinMeshLodData::SP meshLodData = skinMeshEntityFrameData->meshLodData[lodIndex];
                     if (nameToken == _skinMeshLodPropertyTokens->visibility)
                     {
                         RETURN_TRUE_WITH_OPTIONAL_VALUE(_params.glmLodMode == 1 || meshLodData->enabled ? UsdGeomTokens->inherited : UsdGeomTokens->invisible);
@@ -1704,14 +1776,14 @@ namespace glm
                     // this is a mesh or a fur node
 
                     bool useTemplateData = false;
-                    if (!entityFrameData->enabled)
+                    if (!skinMeshEntityFrameData->enabled)
                     {
                         // entity is disabled, use the template data
                         useTemplateData = true;
                     }
                     else
                     {
-                        SkinMeshLodData::SP meshLodData = entityFrameData->meshLodData[lodIndex];
+                        SkinMeshLodData::SP meshLodData = skinMeshEntityFrameData->meshLodData[lodIndex];
                         if (!meshLodData->enabled)
                         {
                             // this is from an inactive LOD, use the template data
@@ -2050,6 +2122,7 @@ namespace glm
             _sgToSsPerChar.resize(_factory->getGolaemCharacters().size());
             _snsIndicesPerChar.resize(_factory->getGolaemCharacters().size());
             _jointsPerChar.resize(_factory->getGolaemCharacters().size());
+            _meshAssetAttrIdxPerMeshNamePerChar.resize(_factory->getGolaemCharacters().size());
             for (int iChar = 0, charCount = _factory->getGolaemCharacters().sizeInt(); iChar < charCount; ++iChar)
             {
                 const glm::GolaemCharacter* character = _factory->getGolaemCharacter(iChar);
@@ -2090,6 +2163,13 @@ namespace glm
                         boneNameWithHierarchy = TfMakeValidIdentifier(parentBone->getName().c_str()) + "/" + boneNameWithHierarchy;
                     }
                     characterJoints[iBone] = TfToken(boneNameWithHierarchy.c_str());
+                }
+
+                glm::GlmMap<GlmString, glm::PODArray<size_t>>& meshAssetAttrIdxPerMeshName = _meshAssetAttrIdxPerMeshNamePerChar[iChar];
+                for (size_t meshAssetAttrIdx = 0, meshAssetAttrCount = character->_meshAssetAttributes.size(); meshAssetAttrIdx < meshAssetAttrCount; ++meshAssetAttrIdx)
+                {
+                    const MeshAssetAttribute& meshAssetAttr = character->_meshAssetAttributes[meshAssetAttrIdx];
+                    meshAssetAttrIdxPerMeshName[meshAssetAttr._meshName].push_back(meshAssetAttrIdx);
                 }
             }
 
@@ -3114,6 +3194,21 @@ namespace glm
                         return true;
                     }
                 }
+                else if (const SkinMeshMapData* meshMapData = TfMapLookupPtr(_skinMeshDataMap, primPath))
+                {
+                    if (const auto* ints = TfMapLookupPtr(meshMapData->templateData->intMeshAttributes, nameToken))
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(ints->second);
+                    }
+                    if (const auto* floats = TfMapLookupPtr(meshMapData->templateData->floatMeshAttributes, nameToken))
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(floats->second);
+                    }
+                    if (const auto* vectors = TfMapLookupPtr(meshMapData->templateData->vector3MeshAttributes, nameToken))
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(vectors->second);
+                    }
+                }
             }
             return false;
         }
@@ -3221,7 +3316,18 @@ namespace glm
             {
                 return false;
             }
-            if (TfMapLookupPtr(_skinMeshDataMap, primPath))
+            if (const _PrimPropertyInfo* propInfo = TfMapLookupPtr(*_skinMeshEntityProperties, nameToken))
+            {
+                if (TfMapLookupPtr(_entityDataMap, primPath))
+                {
+                    if (value && propInfo->hasInterpolation)
+                    {
+                        *value = VtValue(propInfo->interpolation);
+                    }
+                    return propInfo->hasInterpolation;
+                }
+            }
+            if (const SkinMeshMapData* meshMapData = TfMapLookupPtr(_skinMeshDataMap, primPath))
             {
                 if (const _PrimPropertyInfo* propInfo = TfMapLookupPtr(*_skinMeshProperties, nameToken))
                 {
@@ -3230,6 +3336,18 @@ namespace glm
                         *value = VtValue(propInfo->interpolation);
                     }
                     return propInfo->hasInterpolation;
+                }
+                if (const auto* ints = TfMapLookupPtr(meshMapData->templateData->intMeshAttributes, nameToken))
+                {
+                    RETURN_TRUE_WITH_OPTIONAL_VALUE(ints->first);
+                }
+                if (const auto* floats = TfMapLookupPtr(meshMapData->templateData->floatMeshAttributes, nameToken))
+                {
+                    RETURN_TRUE_WITH_OPTIONAL_VALUE(floats->first);
+                }
+                if (const auto* vectors = TfMapLookupPtr(meshMapData->templateData->vector3MeshAttributes, nameToken))
+                {
+                    RETURN_TRUE_WITH_OPTIONAL_VALUE(vectors->first);
                 }
                 return false;
             }
@@ -3399,6 +3517,21 @@ namespace glm
                     {
                         const glm::ShaderAttribute& shaderAttr = (*entityDataPtr)->inputGeoData._character->_shaderAttributes[*shaderAttrIdx];
                         RETURN_TRUE_WITH_OPTIONAL_VALUE(_shaderAttrTypes[shaderAttr._type]);
+                    }
+                }
+                if (const SkinMeshMapData* meshMapData = TfMapLookupPtr(_skinMeshDataMap, primPath))
+                {
+                    if (TfMapLookupPtr(meshMapData->templateData->intMeshAttributes, nameToken))
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(_meshAttrTypes[0]);
+                    }
+                    if (TfMapLookupPtr(meshMapData->templateData->floatMeshAttributes, nameToken))
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(_meshAttrTypes[1]);
+                    }
+                    if (TfMapLookupPtr(meshMapData->templateData->vector3MeshAttributes, nameToken))
+                    {
+                        RETURN_TRUE_WITH_OPTIONAL_VALUE(_meshAttrTypes[2]);
                     }
                 }
             }
@@ -4644,6 +4777,101 @@ namespace glm
                     else
                     {
                         meshTemplateData->materialPath = SdfPathListOp::CreateExplicit({SdfPath(materialName.c_str())});
+                    }
+                }
+
+                if (!inputGeoData._character->_meshAssetAttributes.empty())
+                {
+                    GlmString attributeNamespace = _params.glmAttributeNamespace.GetText();
+                    attributeNamespace.rtrim(":");
+                    glm::GlmMap<GlmString, glm::PODArray<size_t>>& meshAssetAttrIdxPerMeshName = _meshAssetAttrIdxPerMeshNamePerChar[inputGeoData._characterIdx];
+                    glm::GlmMap<GlmString, glm::PODArray<size_t>>::const_iterator itMeshAssetAttrIndex = meshAssetAttrIdxPerMeshName.find(meshName);
+                    if (itMeshAssetAttrIndex != meshAssetAttrIdxPerMeshName.end())
+                    {
+                        const glm::PODArray<size_t>& meshAssetAttrIndices = itMeshAssetAttrIndex.getValue();
+                        for (size_t iMeshAssetAttrIdx = 0, meshAssetAttrCount = meshAssetAttrIndices.size(); iMeshAssetAttrIdx < meshAssetAttrCount; ++iMeshAssetAttrIdx)
+                        {
+                            size_t meshAssetAttrIdx = meshAssetAttrIndices[iMeshAssetAttrIdx];
+                            GLM_DEBUG_ASSERT(meshAssetAttrIdx < inputGeoData._character->_meshAssetAttributes.size());
+                            const MeshAssetAttribute& meshAssetAttr = inputGeoData._character->_meshAssetAttributes[meshAssetAttrIdx];
+                            GlmString fullAttrName = meshAssetAttr._attributeName;
+                            if (!attributeNamespace.empty())
+                            {
+                                fullAttrName = attributeNamespace + ":" + fullAttrName;
+                            }
+                            TfToken interpolationToken;
+                            switch (meshAssetAttr._interpolation)
+                            {
+                            case MeshAssetAttribute::Interpolation::CONSTANT:
+                                interpolationToken = UsdGeomTokens->constant;
+                                break;
+                            case MeshAssetAttribute::Interpolation::UNIFORM:
+                                interpolationToken = UsdGeomTokens->uniform;
+                                break;
+                            case MeshAssetAttribute::Interpolation::VARYING:
+                                interpolationToken = UsdGeomTokens->varying;
+                                break;
+                            case MeshAssetAttribute::Interpolation::VERTEX:
+                                interpolationToken = UsdGeomTokens->vertex;
+                                break;
+                            case MeshAssetAttribute::Interpolation::FACEVARYING:
+                                interpolationToken = UsdGeomTokens->faceVarying;
+                                break;
+                            default:
+                                interpolationToken = UsdGeomTokens->constant;
+                                break;
+                            }
+                            switch (meshAssetAttr._type)
+                            {
+                            case MeshAssetAttribute::DataType::INT:
+                            {
+                                std::pair<TfToken, VtIntArray>& meshAttribute = meshTemplateData->intMeshAttributes[TfToken(fullAttrName.c_str())];
+                                meshAttribute.first = interpolationToken;
+                                int intValue = 0;
+                                for (const GlmString& value : meshAssetAttr._values)
+                                {
+                                    if (!glm::fromString(value, intValue))
+                                    {
+                                        intValue = 0;
+                                    }
+                                    meshAttribute.second.push_back(intValue);
+                                }
+                                break;
+                            }
+                            case MeshAssetAttribute::DataType::FLOAT:
+                            {
+                                std::pair<TfToken, VtFloatArray>& meshAttribute = meshTemplateData->floatMeshAttributes[TfToken(fullAttrName.c_str())];
+                                meshAttribute.first = interpolationToken;
+                                float floatValue = 0.f;
+                                for (const GlmString& value : meshAssetAttr._values)
+                                {
+                                    if (!glm::fromString(value, floatValue))
+                                    {
+                                        floatValue = 0.f;
+                                    }
+                                    meshAttribute.second.push_back(floatValue);
+                                }
+                                break;
+                            }
+                            case MeshAssetAttribute::DataType::VECTOR3:
+                            {
+                                std::pair<TfToken, VtVec3fArray>& meshAttribute = meshTemplateData->vector3MeshAttributes[TfToken(fullAttrName.c_str())];
+                                meshAttribute.first = interpolationToken;
+                                glm::Vector3 vec3Value(0.f);
+                                for (const GlmString& value : meshAssetAttr._values)
+                                {
+                                    if (!glm::fromString(value, vec3Value))
+                                    {
+                                        vec3Value = glm::Vector3(0.f);
+                                    }
+                                    meshAttribute.second.push_back(GfVec3f(vec3Value.getFloatValues()));
+                                }
+                                break;
+                            }
+                            default:
+                                break;
+                            }
+                        }
                     }
                 }
             }
