@@ -117,6 +117,9 @@ namespace glm
                 // int normalsCount; // not needed, = faceVertexIndices.size();
                 SdfPathListOp materialPath;
                 int velocitiesIntShaderAttributeIndex = -1; // index of the enableUsdVelocities int attribute if found, -1 otherwise
+                std::map<TfToken, std::pair<TfToken, VtIntArray>, TfTokenFastArbitraryLessThan> intMeshAttributes;       // <attributeName, <attributeInterpolation, attributeValues>>
+                std::map<TfToken, std::pair<TfToken, VtFloatArray>, TfTokenFastArbitraryLessThan> floatMeshAttributes;   // <attributeName, <attributeInterpolation, attributeValues>>
+                std::map<TfToken, std::pair<TfToken, VtVec3fArray>, TfTokenFastArbitraryLessThan> vector3MeshAttributes; // <attributeName, <attributeInterpolation, attributeValues>>
             };
 
             struct SkinMeshData : public glm::ReferenceCounter
@@ -266,6 +269,8 @@ namespace glm
             glm::Array<glm::Array<std::map<std::pair<int, int>, SkinMeshTemplateData::SP>>> _skinMeshTemplateDataPerCharPerGeomFile;
             glm::Array<glm::Array<std::map<int, FurTemplateData::SP>>> _furTemplateDataPerCharPerGeomFile;
 
+            glm::Array<glm::GlmMap<GlmString, glm::PODArray<size_t>>> _meshAssetAttrIdxPerMeshNamePerChar;
+
             glm::Array<TfToken> _shaderAttrTypes;
             glm::Array<VtValue> _shaderAttrDefaultValues;
 
@@ -273,6 +278,8 @@ namespace glm
             glm::Array<VtValue> _ppAttrDefaultValues;
 
             glm::Array<TfToken> _furPropertyTypes;
+
+            glm::Array<TfToken> _meshAttrTypes;
 
             int _startFrame;
             int _endFrame;
