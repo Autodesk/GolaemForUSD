@@ -218,6 +218,12 @@ if(GOLAEMUSD_STANDALONE_BUILD)
         target_link_libraries( ${PROJECT_NAME} hdGp usd usdGeom)
     endif()
 
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+    )
+
     if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE "-DNOMINMAX" "/MP" "/nologo" "/wd4251")
 
@@ -229,15 +235,8 @@ if(GOLAEMUSD_STANDALONE_BUILD)
         # flags needed for some usd includes (that use hash_set)
         target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-deprecated")
 
-        # follow the vfx reference platform: https://vfxplatform.com/
-        if( CMAKE_COMPILER_IS_GNUCC )
-            if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0) # gcc 5.x 6.x
-                target_compile_options(${PROJECT_NAME} PUBLIC "-std=c++14" "-D_GLIBCXX_USE_CXX11_ABI=0")
-            elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0) # gcc 7.x 8.x 9.x 10.x
-                target_compile_options(${PROJECT_NAME} PUBLIC "-std=c++17" "-D_GLIBCXX_USE_CXX11_ABI=0") 
-            else() # gcc 11.x (used versions should be 11.1 at least)
-                target_compile_options(${PROJECT_NAME} PUBLIC "-std=c++17" "-D_GLIBCXX_USE_CXX11_ABI=1")
-            endif()
+        if (CMAKE_COMPILER_IS_GNUCC)
+            target_compile_definitions(${PROJECT_NAME} PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
         endif()
 
         set_target_properties( ${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../lib:$ORIGIN/../../../lib" )
