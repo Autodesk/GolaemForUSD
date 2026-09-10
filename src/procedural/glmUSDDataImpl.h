@@ -107,6 +107,13 @@ namespace glm
             {
                 typedef SmartPointer<SkinMeshTemplateData> SP;
 
+                struct MeshAttributeData
+                {
+                    TfToken interpolation;
+                    TfToken typeName;
+                    VtValue values;
+                };
+
                 VtIntArray faceVertexCounts;
                 VtIntArray faceVertexIndices;
                 glm::Array<VtVec2fArray> uvSets; // stored by polygon vertex
@@ -117,9 +124,7 @@ namespace glm
                 // int normalsCount; // not needed, = faceVertexIndices.size();
                 SdfPathListOp materialPath;
                 int velocitiesIntShaderAttributeIndex = -1; // index of the enableUsdVelocities int attribute if found, -1 otherwise
-                std::map<TfToken, std::pair<TfToken, VtIntArray>, TfTokenFastArbitraryLessThan> intMeshAttributes;       // <attributeName, <attributeInterpolation, attributeValues>>
-                std::map<TfToken, std::pair<TfToken, VtFloatArray>, TfTokenFastArbitraryLessThan> floatMeshAttributes;   // <attributeName, <attributeInterpolation, attributeValues>>
-                std::map<TfToken, std::pair<TfToken, VtVec3fArray>, TfTokenFastArbitraryLessThan> vector3MeshAttributes; // <attributeName, <attributeInterpolation, attributeValues>>
+                std::map<TfToken, MeshAttributeData, TfTokenFastArbitraryLessThan> meshAttributes;
             };
 
             struct SkinMeshData : public glm::ReferenceCounter
