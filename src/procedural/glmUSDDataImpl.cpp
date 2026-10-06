@@ -4475,69 +4475,6 @@ namespace glm
             return VtValue(_RemapMeshAttributeValues(std::move(values), remap));
         }
 
-        // uniform int mesh attribute giving the mesh asset material index of each original polygon, not exported as a primvar
-        static const char* const _materialIndexMeshAttributeName = "__glmMaterialIndex__";
-
-        //-----------------------------------------------------------------------------
-        // fill the polygon and face vertex remaps of a split gcg submesh from the original polygon material indices
-        // subMeshes are all the submeshes of the original mesh, in material order
-        static void _ComputeGcgSubMeshPolygonRemaps(
-            const MeshAssetAttribute& materialIndexAttr,
-            const glm::PODArray<const glm::crowdio::GlmFileMesh*>& subMeshes,
-            const glm::crowdio::GlmFileMesh& subMesh,
-            int meshMaterialIndex,
-            glm::PODArray<uint32_t>& polygonRemap,
-            glm::PODArray<uint32_t>& faceVertexRemap)
-        {
-            if (meshMaterialIndex < 0 || static_cast<size_t>(meshMaterialIndex) >= subMeshes.size() || subMeshes[meshMaterialIndex] != &subMesh)
-            {
-                return;
-            }
-
-            uint32_t originalPolygonCount = static_cast<uint32_t>(materialIndexAttr._values.size());
-            glm::PODArray<int> polygonMaterials;
-            polygonMaterials.resize(originalPolygonCount, -1);
-            for (uint32_t iPoly = 0; iPoly < originalPolygonCount; ++iPoly)
-            {
-                if (!glm::fromString(materialIndexAttr._values[iPoly], polygonMaterials[iPoly]))
-                {
-                    polygonMaterials[iPoly] = -1;
-                }
-                if (polygonMaterials[iPoly] == meshMaterialIndex)
-                {
-                    polygonRemap.push_back(iPoly);
-                }
-            }
-            if (polygonRemap.size() != subMesh._polygonCount)
-            {
-                polygonRemap.clear();
-                return;
-            }
-
-            // original polygon sizes come from the sibling submeshes, which keep the original polygon order
-            glm::PODArray<uint32_t> subMeshPolygonCursors;
-            subMeshPolygonCursors.resize(subMeshes.size(), 0);
-            faceVertexRemap.reserve(subMesh._polygonsTotalVertexCount);
-            for (uint32_t iPoly = 0, originalFaceVertexIndex = 0; iPoly < originalPolygonCount; ++iPoly)
-            {
-                int polygonMaterial = polygonMaterials[iPoly];
-                if (polygonMaterial < 0 || static_cast<size_t>(polygonMaterial) >= subMeshes.size() || subMeshPolygonCursors[polygonMaterial] >= subMeshes[polygonMaterial]->_polygonCount)
-                {
-                    faceVertexRemap.clear();
-                    return;
-                }
-                uint32_t polySize = subMeshes[polygonMaterial]->_polygonsVertexCount[subMeshPolygonCursors[polygonMaterial]++];
-                if (polygonMaterial == meshMaterialIndex)
-                {
-                    for (uint32_t iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex)
-                    {
-                        faceVertexRemap.push_back(originalFaceVertexIndex + iPolyVertex);
-                    }
-                }
-                originalFaceVertexIndex += polySize;
-            }
-        }
-
         //-----------------------------------------------------------------------------
         void GolaemUSD_DataImpl::_ComputeSkinMeshTemplateData(std::map<std::pair<int, int>, SkinMeshTemplateData::SP>& lodTemplateData, const glm::crowdio::InputEntityGeoData& inputGeoData, const glm::crowdio::OutputEntityGeoData& outputData)
         {
@@ -4546,12 +4483,8 @@ namespace glm
 
             glm::GlmString meshName, meshAlias, materialSuffix;
 
-            // original mesh element index for each submesh element, empty when no remap is needed
-            glm::PODArray<uint32_t> polygonRemap, vertexRemap, faceVertexRemap;
+            glm::crowdio::MeshAssetAttributeRemaps remaps;
             const glm::PODArray<uint32_t> noRemap;
-
-            // a split gcg mesh is written as one transform per material, in material order, sharing the same reference name
-            std::map<std::string, glm::PODArray<const glm::crowdio::GlmFileMesh*>> gcgSubMeshesPerReferenceName;
 
             size_t meshCount = outputData._meshAssetNameIndices.size();
             for (size_t iRenderMesh = 0; iRenderMesh < meshCount; ++iRenderMesh)
@@ -4570,9 +4503,6 @@ namespace glm
                         meshAssetAttrIndices = &itMeshAssetAttrIndex.getValue();
                     }
                 }
-                polygonRemap.clear();
-                vertexRemap.clear();
-                faceVertexRemap.clear();
 
                 int gchaMeshId = outputData._gchaMeshIds[iRenderMesh];
                 int meshMaterialIndex = outputData._meshAssetMaterialIndices[iRenderMesh];
@@ -4674,33 +4604,6 @@ namespace glm
                         }
                     }
 
-                    if (meshAssetAttrIndices != nullptr && meshTemplateData->faceVertexCounts.size() != fbxPolyCount)
-                    {
-                        polygonRemap.reserve(meshTemplateData->faceVertexCounts.size());
-                        faceVertexRemap.reserve(meshTemplateData->faceVertexIndices.size());
-                        for (unsigned int iFbxPoly = 0, fbxIndexByPolyVertex = 0; iFbxPoly < fbxPolyCount; ++iFbxPoly)
-                        {
-                            int polySize = fbxMesh->GetPolygonSize(iFbxPoly);
-                            if (polygonMasks[iFbxPoly])
-                            {
-                                polygonRemap.push_back(iFbxPoly);
-                                for (int iPolyVertex = 0; iPolyVertex < polySize; ++iPolyVertex)
-                                {
-                                    faceVertexRemap.push_back(fbxIndexByPolyVertex + iPolyVertex);
-                                }
-                            }
-                            fbxIndexByPolyVertex += polySize;
-                        }
-                        vertexRemap.reserve(iActualVertex);
-                        for (unsigned int iFbxVertex = 0; iFbxVertex < fbxVertexCount; ++iFbxVertex)
-                        {
-                            if (vertexMasks[iFbxVertex] >= 0)
-                            {
-                                vertexRemap.push_back(iFbxVertex);
-                            }
-                        }
-                    }
-
                     meshTemplateData->defaultNormals.assign(meshTemplateData->faceVertexIndices.size(), GfVec3f(0.0f, 0.0f, 0.0f));
 
                     // find how many uv layers are available
@@ -4775,33 +4678,6 @@ namespace glm
                     glm::crowdio::GlmFileMesh& assetFileMesh = gcgCharacter->getGeometry()._meshes[assetFileMeshTransform._meshIndex];
 
                     meshTemplateData->defaultPoints.assign(assetFileMesh._vertexCount, GfVec3f(0.0f, 0.0f, 0.0f));
-
-                    if (meshAssetAttrIndices != nullptr)
-                    {
-                        if (assetFileMesh._originalVertexCount > 0 && assetFileMesh._originalVertexIndices != nullptr)
-                        {
-                            // pointer overload: copies _vertexCount indices, not a fill
-                            vertexRemap.assign(assetFileMesh._vertexCount, assetFileMesh._originalVertexIndices);
-                        }
-                        for (size_t meshAssetAttrIdx : *meshAssetAttrIndices)
-                        {
-                            const MeshAssetAttribute& meshAssetAttr = inputGeoData._character->_meshAssetAttributes[meshAssetAttrIdx];
-                            if (meshAssetAttr._attributeName == _materialIndexMeshAttributeName)
-                            {
-                                const glm::crowdio::GlmGeometryFile& geometry = gcgCharacter->getGeometry();
-                                if (gcgSubMeshesPerReferenceName.empty())
-                                {
-                                    for (uint16_t iTransform = 0; iTransform < geometry._transformCount; ++iTransform)
-                                    {
-                                        const glm::crowdio::GlmFileMeshTransform& transform = geometry._transforms[iTransform];
-                                        gcgSubMeshesPerReferenceName[transform._referenceName._string].push_back(&geometry._meshes[transform._meshIndex]);
-                                    }
-                                }
-                                _ComputeGcgSubMeshPolygonRemaps(meshAssetAttr, gcgSubMeshesPerReferenceName[assetFileMeshTransform._referenceName._string], assetFileMesh, meshMaterialIndex, polygonRemap, faceVertexRemap);
-                                break;
-                            }
-                        }
-                    }
 
                     for (uint32_t iPoly = 0, iVertex = 0; iPoly < assetFileMesh._polygonCount; ++iPoly)
                     {
@@ -4882,13 +4758,25 @@ namespace glm
 
                 if (meshAssetAttrIndices != nullptr)
                 {
+                    const MeshAssetAttribute* materialIndexAttr = nullptr;
+                    for (size_t meshAssetAttrIdx : *meshAssetAttrIndices)
+                    {
+                        const MeshAssetAttribute& meshAssetAttr = inputGeoData._character->_meshAssetAttributes[meshAssetAttrIdx];
+                        if (meshAssetAttr._attributeName == glm::crowdio::MESH_ASSET_MATERIAL_INDEX_ATTRIBUTE_NAME)
+                        {
+                            materialIndexAttr = &meshAssetAttr;
+                            break;
+                        }
+                    }
+                    glm::crowdio::computeMeshAssetAttributeRemaps(outputData, iRenderMesh, materialIndexAttr, remaps);
+
                     GlmString attributeNamespace = _params.glmAttributeNamespace.GetText();
                     attributeNamespace.rtrim(":");
                     for (size_t meshAssetAttrIdx : *meshAssetAttrIndices)
                     {
                         GLM_DEBUG_ASSERT(meshAssetAttrIdx < inputGeoData._character->_meshAssetAttributes.size());
                         const MeshAssetAttribute& meshAssetAttr = inputGeoData._character->_meshAssetAttributes[meshAssetAttrIdx];
-                        if (meshAssetAttr._attributeName == _materialIndexMeshAttributeName)
+                        if (&meshAssetAttr == materialIndexAttr)
                         {
                             continue;
                         }
@@ -4908,22 +4796,22 @@ namespace glm
                             break;
                         case MeshAssetAttribute::Interpolation::UNIFORM:
                             interpolationToken = UsdGeomTokens->uniform;
-                            valueRemap = &polygonRemap;
+                            valueRemap = &remaps._polygons;
                             expectedValueCount = meshTemplateData->faceVertexCounts.size();
                             break;
                         case MeshAssetAttribute::Interpolation::VARYING:
                             interpolationToken = UsdGeomTokens->varying;
-                            valueRemap = &vertexRemap;
+                            valueRemap = &remaps._vertices;
                             expectedValueCount = meshTemplateData->defaultPoints.size();
                             break;
                         case MeshAssetAttribute::Interpolation::VERTEX:
                             interpolationToken = UsdGeomTokens->vertex;
-                            valueRemap = &vertexRemap;
+                            valueRemap = &remaps._vertices;
                             expectedValueCount = meshTemplateData->defaultPoints.size();
                             break;
                         case MeshAssetAttribute::Interpolation::FACEVARYING:
                             interpolationToken = UsdGeomTokens->faceVarying;
-                            valueRemap = &faceVertexRemap;
+                            valueRemap = &remaps._faceVertices;
                             expectedValueCount = meshTemplateData->faceVertexIndices.size();
                             break;
                         default:
