@@ -4426,6 +4426,56 @@ namespace glm
         }
 
         //-----------------------------------------------------------------------------
+        // values[remap[i]] for each i, values unchanged if remap is empty, or an empty array if remap is out of range
+        template <typename T>
+        static VtArray<T> _RemapMeshAttributeValues(VtArray<T>&& values, const glm::PODArray<uint32_t>& remap)
+        {
+            if (remap.empty())
+            {
+                return std::move(values);
+            }
+            for (uint32_t index : remap)
+            {
+                if (index >= values.size())
+                {
+                    return VtArray<T>();
+                }
+            }
+            VtArray<T> remappedValues;
+            remappedValues.reserve(remap.size());
+            for (uint32_t index : remap)
+            {
+                remappedValues.push_back(values[index]);
+            }
+            return remappedValues;
+        }
+
+        static int _ToUsdMeshAttributeValue(int value) { return value; }
+        static float _ToUsdMeshAttributeValue(float value) { return value; }
+        static GfVec3f _ToUsdMeshAttributeValue(const glm::Vector3& value) { return GfVec3f(value.getFloatValues()); }
+        static GfVec4f _ToUsdMeshAttributeValue(const glm::Vector4& value) { return GfVec4f(value.getFloatValues()); }
+
+        //-----------------------------------------------------------------------------
+        // unparsable strings get defaultValue
+        template <typename GlmT>
+        static VtValue _ParseMeshAttributeValues(const glm::Array<glm::GlmString>& stringValues, const GlmT& defaultValue, const glm::PODArray<uint32_t>& remap)
+        {
+            using UsdT = decltype(_ToUsdMeshAttributeValue(std::declval<GlmT>()));
+            VtArray<UsdT> values;
+            values.reserve(stringValues.size());
+            GlmT value = defaultValue;
+            for (const glm::GlmString& stringValue : stringValues)
+            {
+                if (!glm::fromString(stringValue, value))
+                {
+                    value = defaultValue;
+                }
+                values.push_back(_ToUsdMeshAttributeValue(value));
+            }
+            return VtValue(_RemapMeshAttributeValues(std::move(values), remap));
+        }
+
+        //-----------------------------------------------------------------------------
         void GolaemUSD_DataImpl::_ComputeSkinMeshTemplateData(std::map<std::pair<int, int>, SkinMeshTemplateData::SP>& lodTemplateData, const glm::crowdio::InputEntityGeoData& inputGeoData, const glm::crowdio::OutputEntityGeoData& outputData)
         {
             int velocitiesShaderAttributeIndex = -1, velocitiesIntShaderAttributeIndex = -1;
@@ -4433,11 +4483,27 @@ namespace glm
 
             glm::GlmString meshName, meshAlias, materialSuffix;
 
+            glm::crowdio::MeshAssetAttributeRemaps remaps;
+            const glm::PODArray<uint32_t> noRemap;
+
             size_t meshCount = outputData._meshAssetNameIndices.size();
             for (size_t iRenderMesh = 0; iRenderMesh < meshCount; ++iRenderMesh)
             {
                 meshName = outputData._meshAssetNames[outputData._meshAssetNameIndices[iRenderMesh]];
                 meshAlias = outputData._meshAssetAliases[outputData._meshAssetNameIndices[iRenderMesh]];
+
+                // lookup with the original mesh name, before the material suffix is appended
+                const glm::PODArray<size_t>* meshAssetAttrIndices = nullptr;
+                if (!inputGeoData._character->_meshAssetAttributes.empty())
+                {
+                    glm::GlmMap<GlmString, glm::PODArray<size_t>>& meshAssetAttrIdxPerMeshName = _meshAssetAttrIdxPerMeshNamePerChar[inputGeoData._characterIdx];
+                    glm::GlmMap<GlmString, glm::PODArray<size_t>>::const_iterator itMeshAssetAttrIndex = meshAssetAttrIdxPerMeshName.find(meshName);
+                    if (itMeshAssetAttrIndex != meshAssetAttrIdxPerMeshName.end())
+                    {
+                        meshAssetAttrIndices = &itMeshAssetAttrIndex.getValue();
+                    }
+                }
+
                 int gchaMeshId = outputData._gchaMeshIds[iRenderMesh];
                 int meshMaterialIndex = outputData._meshAssetMaterialIndices[iRenderMesh];
                 if (meshMaterialIndex != 0)
@@ -4690,168 +4756,110 @@ namespace glm
                     }
                 }
 
-                if (!inputGeoData._character->_meshAssetAttributes.empty())
+                if (meshAssetAttrIndices != nullptr)
                 {
+                    const MeshAssetAttribute* materialIndexAttr = nullptr;
+                    for (size_t meshAssetAttrIdx : *meshAssetAttrIndices)
+                    {
+                        const MeshAssetAttribute& meshAssetAttr = inputGeoData._character->_meshAssetAttributes[meshAssetAttrIdx];
+                        if (meshAssetAttr._attributeName == glm::crowdio::MESH_ASSET_MATERIAL_INDEX_ATTRIBUTE_NAME)
+                        {
+                            materialIndexAttr = &meshAssetAttr;
+                            break;
+                        }
+                    }
+                    glm::crowdio::computeMeshAssetAttributeRemaps(outputData, iRenderMesh, materialIndexAttr, remaps);
+
                     GlmString attributeNamespace = _params.glmAttributeNamespace.GetText();
                     attributeNamespace.rtrim(":");
-                    glm::GlmMap<GlmString, glm::PODArray<size_t>>& meshAssetAttrIdxPerMeshName = _meshAssetAttrIdxPerMeshNamePerChar[inputGeoData._characterIdx];
-                    glm::GlmMap<GlmString, glm::PODArray<size_t>>::const_iterator itMeshAssetAttrIndex = meshAssetAttrIdxPerMeshName.find(meshName);
-                    if (itMeshAssetAttrIndex != meshAssetAttrIdxPerMeshName.end())
+                    for (size_t meshAssetAttrIdx : *meshAssetAttrIndices)
                     {
-                        const glm::PODArray<size_t>& meshAssetAttrIndices = itMeshAssetAttrIndex.getValue();
-                        for (size_t iMeshAssetAttrIdx = 0, meshAssetAttrCount = meshAssetAttrIndices.size(); iMeshAssetAttrIdx < meshAssetAttrCount; ++iMeshAssetAttrIdx)
+                        GLM_DEBUG_ASSERT(meshAssetAttrIdx < inputGeoData._character->_meshAssetAttributes.size());
+                        const MeshAssetAttribute& meshAssetAttr = inputGeoData._character->_meshAssetAttributes[meshAssetAttrIdx];
+                        if (&meshAssetAttr == materialIndexAttr)
                         {
-                            size_t meshAssetAttrIdx = meshAssetAttrIndices[iMeshAssetAttrIdx];
-                            GLM_DEBUG_ASSERT(meshAssetAttrIdx < inputGeoData._character->_meshAssetAttributes.size());
-                            const MeshAssetAttribute& meshAssetAttr = inputGeoData._character->_meshAssetAttributes[meshAssetAttrIdx];
-                            GlmString fullAttrName = meshAssetAttr._attributeName;
-                            if (!attributeNamespace.empty())
-                            {
-                                fullAttrName = attributeNamespace + ":" + fullAttrName;
-                            }
-                            TfToken attrNameToken(fullAttrName.c_str());
-                            TfToken interpolationToken;
-                            switch (meshAssetAttr._interpolation)
-                            {
-                            case MeshAssetAttribute::Interpolation::CONSTANT:
-                                interpolationToken = UsdGeomTokens->constant;
-                                break;
-                            case MeshAssetAttribute::Interpolation::UNIFORM:
-                                interpolationToken = UsdGeomTokens->uniform;
-                                break;
-                            case MeshAssetAttribute::Interpolation::VARYING:
-                                interpolationToken = UsdGeomTokens->varying;
-                                break;
-                            case MeshAssetAttribute::Interpolation::VERTEX:
-                                interpolationToken = UsdGeomTokens->vertex;
-                                break;
-                            case MeshAssetAttribute::Interpolation::FACEVARYING:
-                                interpolationToken = UsdGeomTokens->faceVarying;
-                                break;
-                            default:
-                                interpolationToken = UsdGeomTokens->constant;
-                                break;
-                            }
-                            switch (meshAssetAttr._type)
-                            {
-                            case MeshAssetAttribute::DataType::INT:
-                            {
-                                SkinMeshTemplateData::MeshAttributeData& meshAttribute = meshTemplateData->meshAttributes[attrNameToken];
-                                meshAttribute.interpolation = interpolationToken;
-                                meshAttribute.typeName = _meshAttrTypes[MeshAssetAttribute::DataType::INT];
-                                int intValue = 0;
-                                VtIntArray values;
-                                values.reserve(meshAssetAttr._values.size());
-                                for (const GlmString& value : meshAssetAttr._values)
-                                {
-                                    if (!glm::fromString(value, intValue))
-                                    {
-                                        intValue = 0;
-                                    }
-                                    values.push_back(intValue);
-                                }
-                                meshAttribute.values = VtValue(std::move(values));
-                                break;
-                            }
-                            case MeshAssetAttribute::DataType::FLOAT:
-                            {
-                                SkinMeshTemplateData::MeshAttributeData& meshAttribute = meshTemplateData->meshAttributes[attrNameToken];
-                                meshAttribute.interpolation = interpolationToken;
-                                meshAttribute.typeName = _meshAttrTypes[MeshAssetAttribute::DataType::FLOAT];
-                                float floatValue = 0.f;
-                                VtFloatArray values;
-                                values.reserve(meshAssetAttr._values.size());
-                                for (const GlmString& value : meshAssetAttr._values)
-                                {
-                                    if (!glm::fromString(value, floatValue))
-                                    {
-                                        floatValue = 0.f;
-                                    }
-                                    values.push_back(floatValue);
-                                }
-                                meshAttribute.values = VtValue(std::move(values));
-                                break;
-                            }
-                            case MeshAssetAttribute::DataType::VECTOR3:
-                            {
-                                SkinMeshTemplateData::MeshAttributeData& meshAttribute = meshTemplateData->meshAttributes[attrNameToken];
-                                meshAttribute.interpolation = interpolationToken;
-                                meshAttribute.typeName = _meshAttrTypes[MeshAssetAttribute::DataType::VECTOR3];
-                                glm::Vector3 vec3Value(0.f);
-                                VtVec3fArray values;
-                                values.reserve(meshAssetAttr._values.size());
-                                for (const GlmString& value : meshAssetAttr._values)
-                                {
-                                    if (!glm::fromString(value, vec3Value))
-                                    {
-                                        vec3Value = glm::Vector3(0.f);
-                                    }
-                                    values.push_back(GfVec3f(vec3Value.getFloatValues()));
-                                }
-                                meshAttribute.values = VtValue(std::move(values));
-                                break;
-                            }
-                            case MeshAssetAttribute::DataType::VECTOR4:
-                            {
-                                SkinMeshTemplateData::MeshAttributeData& meshAttribute = meshTemplateData->meshAttributes[attrNameToken];
-                                meshAttribute.interpolation = interpolationToken;
-                                meshAttribute.typeName = _meshAttrTypes[MeshAssetAttribute::DataType::VECTOR4];
-                                glm::Vector4 vec4Value(0.f);
-                                VtVec4fArray values;
-                                values.reserve(meshAssetAttr._values.size());
-                                for (const GlmString& value : meshAssetAttr._values)
-                                {
-                                    if (!glm::fromString(value, vec4Value))
-                                    {
-                                        vec4Value = glm::Vector4(0.f);
-                                    }
-                                    values.push_back(GfVec4f(vec4Value.getFloatValues()));
-                                }
-                                meshAttribute.values = VtValue(std::move(values));
-                                break;
-                            }
-                            case MeshAssetAttribute::DataType::COLOR3:
-                            {
-                                SkinMeshTemplateData::MeshAttributeData& meshAttribute = meshTemplateData->meshAttributes[attrNameToken];
-                                meshAttribute.interpolation = interpolationToken;
-                                meshAttribute.typeName = _meshAttrTypes[MeshAssetAttribute::DataType::COLOR3];
-                                glm::Vector3 color3Value(0.f);
-                                VtVec3fArray values;
-                                values.reserve(meshAssetAttr._values.size());
-                                for (const GlmString& value : meshAssetAttr._values)
-                                {
-                                    if (!glm::fromString(value, color3Value))
-                                    {
-                                        color3Value = glm::Vector3(0.f);
-                                    }
-                                    values.push_back(GfVec3f(color3Value.getFloatValues()));
-                                }
-                                meshAttribute.values = VtValue(std::move(values));
-                                break;
-                            }
-                            case MeshAssetAttribute::DataType::COLOR4:
-                            {
-                                SkinMeshTemplateData::MeshAttributeData& meshAttribute = meshTemplateData->meshAttributes[attrNameToken];
-                                meshAttribute.interpolation = interpolationToken;
-                                meshAttribute.typeName = _meshAttrTypes[MeshAssetAttribute::DataType::COLOR4];
-                                glm::Vector4 color4Value(0.f);
-                                VtVec4fArray values;
-                                values.reserve(meshAssetAttr._values.size());
-                                for (const GlmString& value : meshAssetAttr._values)
-                                {
-                                    if (!glm::fromString(value, color4Value))
-                                    {
-                                        color4Value = glm::Vector4(0.f);
-                                    }
-                                    values.push_back(GfVec4f(color4Value.getFloatValues()));
-                                }
-                                meshAttribute.values = VtValue(std::move(values));
-                                break;
-                            }
-                            default:
-                                break;
-                            }
+                            continue;
                         }
+                        GlmString fullAttrName = meshAssetAttr._attributeName;
+                        if (!attributeNamespace.empty())
+                        {
+                            fullAttrName = attributeNamespace + ":" + fullAttrName;
+                        }
+                        TfToken attrNameToken(fullAttrName.c_str());
+                        TfToken interpolationToken;
+                        const glm::PODArray<uint32_t>* valueRemap = &noRemap;
+                        size_t expectedValueCount = 0; // 0 when the value count does not depend on the mesh topology
+                        switch (meshAssetAttr._interpolation)
+                        {
+                        case MeshAssetAttribute::Interpolation::CONSTANT:
+                            interpolationToken = UsdGeomTokens->constant;
+                            break;
+                        case MeshAssetAttribute::Interpolation::UNIFORM:
+                            interpolationToken = UsdGeomTokens->uniform;
+                            valueRemap = &remaps._polygons;
+                            expectedValueCount = meshTemplateData->faceVertexCounts.size();
+                            break;
+                        case MeshAssetAttribute::Interpolation::VARYING:
+                            interpolationToken = UsdGeomTokens->varying;
+                            valueRemap = &remaps._vertices;
+                            expectedValueCount = meshTemplateData->defaultPoints.size();
+                            break;
+                        case MeshAssetAttribute::Interpolation::VERTEX:
+                            interpolationToken = UsdGeomTokens->vertex;
+                            valueRemap = &remaps._vertices;
+                            expectedValueCount = meshTemplateData->defaultPoints.size();
+                            break;
+                        case MeshAssetAttribute::Interpolation::FACEVARYING:
+                            interpolationToken = UsdGeomTokens->faceVarying;
+                            valueRemap = &remaps._faceVertices;
+                            expectedValueCount = meshTemplateData->faceVertexIndices.size();
+                            break;
+                        default:
+                            interpolationToken = UsdGeomTokens->constant;
+                            break;
+                        }
+                        VtValue values;
+                        switch (meshAssetAttr._type)
+                        {
+                        case MeshAssetAttribute::DataType::INT:
+                            values = _ParseMeshAttributeValues(meshAssetAttr._values, 0, *valueRemap);
+                            break;
+                        case MeshAssetAttribute::DataType::FLOAT:
+                            values = _ParseMeshAttributeValues(meshAssetAttr._values, 0.f, *valueRemap);
+                            break;
+                        case MeshAssetAttribute::DataType::VECTOR3:
+                        case MeshAssetAttribute::DataType::COLOR3:
+                            values = _ParseMeshAttributeValues(meshAssetAttr._values, glm::Vector3(0.f), *valueRemap);
+                            break;
+                        case MeshAssetAttribute::DataType::VECTOR4:
+                        case MeshAssetAttribute::DataType::COLOR4:
+                            values = _ParseMeshAttributeValues(meshAssetAttr._values, glm::Vector4(0.f), *valueRemap);
+                            break;
+                        default:
+                            break;
+                        }
+                        if (values.IsEmpty())
+                        {
+                            continue;
+                        }
+
+                        if (expectedValueCount > 0 && values.GetArraySize() != expectedValueCount)
+                        {
+                            if (values.GetArraySize() == 0 && !meshAssetAttr._values.empty())
+                            {
+                                GLM_CROWD_TRACE_WARNING("Mesh attribute '" << meshAssetAttr._attributeName << "' on mesh '" << meshName << "' has " << meshAssetAttr._values.size() << " values, too few to be remapped on the submesh for " << interpolationToken.GetText() << " interpolation. It will be ignored.");
+                            }
+                            else
+                            {
+                                GLM_CROWD_TRACE_WARNING("Mesh attribute '" << meshAssetAttr._attributeName << "' on mesh '" << meshName << "' has " << values.GetArraySize() << " values, expected " << expectedValueCount << " for " << interpolationToken.GetText() << " interpolation. It will be ignored.");
+                            }
+                            continue;
+                        }
+
+                        SkinMeshTemplateData::MeshAttributeData& meshAttribute = meshTemplateData->meshAttributes[attrNameToken];
+                        meshAttribute.interpolation = interpolationToken;
+                        meshAttribute.typeName = _meshAttrTypes[meshAssetAttr._type];
+                        meshAttribute.values = std::move(values);
                     }
                 }
             }
