@@ -2,6 +2,7 @@
 
 #if PXR_VERSION > 2505
 
+USD_INCLUDES_START
 #include <pxr/imaging/hd/containerDataSourceEditor.h>
 #include <pxr/imaging/hd/materialBindingsSchema.h>
 #include <pxr/imaging/hd/meshSchema.h>
@@ -9,6 +10,7 @@
 #include <pxr/imaging/hd/primvarsSchema.h>
 #include <pxr/imaging/hd/xformSchema.h>
 #include <pxr/base/gf/quatd.h>
+USD_INCLUDES_END
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
