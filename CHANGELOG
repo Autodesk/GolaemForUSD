@@ -1,3 +1,414 @@
+GOLAEM FOR USD 9.3.3 - CHANGELOG - November 18th 2026
+-----------------------------------------------------
+
+** New features
+
+- Added support for PRef in the Golaem For USD plugin
+
+
+** Bug fixes
+
+- Fixed a crash when displaying bounding boxes in the Golaem for USD plugin
+- Fixed frame range cropping when using Time Offset layers in the Golaem for USD plugin
+- Fixed Golaem For USD plugin not loading in Katana 5
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.25.11 / For MayaUSD 0.35.0 / For Houdini 21.0 / For Katana 5
+
+
+
+
+GOLAEM FOR USD 9.3.2 - CHANGELOG - July 22nd 2026
+-------------------------------------------------
+
+** Important notice
+
+GolaemForUSD, GolaemForUnreal and GolaemForHoudini have been open sourced and are available on https://github.com/autodesk in case you want to build them yourself with an unsupported version of USD, Unreal or Houdini
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.25.11 / For MayaUSD 0.35.0 / For Houdini 20.0 / For Katana 5
+
+
+
+
+GOLAEM FOR USD 9.3.1 - CHANGELOG - May 20th 2026
+------------------------------------------------
+
+** Improvements
+
+- Added support for fur in the Golaem For USD procedural plugin
+- Added support for velocities computation in the Golaem For USD procedural plugin
+
+
+** Refactoring
+
+- Added support for USD 0.25.11
+- Removed support for USD Standalone 0.23.11
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.25.11 / For MayaUSD 0.35.0 / For Houdini 20.0 / For Katana 5
+
+
+
+
+GOLAEM FOR USD 9.3 - CHANGELOG - December 19th 2025
+---------------------------------------------------
+
+** Improvements
+
+- Improved the Golaem For USD procedural plugin performances when using motion blur
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.23.11 / For MayaUSD 0.23.0 - 0.27.0 / For Houdini 19.5 and 20.0 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 9.2.3 - CHANGELOG - November 12th 2025
+-----------------------------------------------------
+
+** Improvements
+
+- Added support for geometryTagId, geometryFileId and lodName in the Golaem for USD plugin
+
+
+** Bug fixes
+
+- Fixed entity extents in the Golaem For USD plugin
+- Fixed LOD display in the Golaem For USD plugin
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.23.11 / For MayaUSD 0.23.0 - 0.27.0 / For Houdini 19.5 and 20.0 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 9.2.2 - CHANGELOG - August 6th 2025
+--------------------------------------------------
+
+** Improvements
+
+- Entities removed using a Kill layer are not generated anymore in the Golaem for USD plugin
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.23.11 / For MayaUSD 0.23.0 - 0.27.0 / For Houdini 19.5 and 20.0 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 9.2 - CHANGELOG - March 26th 2025
+------------------------------------------------
+
+** Bug fixes
+
+- Fixed a crash when using SetGeometryFile Layer in the USDProc plugin
+
+
+** API
+
+- Added glmEntityIds flag in the USD procedural plugin syntax
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.23.11 / For MayaUSD 0.23.0 - 0.27.0 / For Houdini 19.5 and 20.0 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 9.1 - CHANGELOG - June 26th 2024
+-----------------------------------------------
+
+** Improvements
+
+- Added USD Procedural attributes in the Golaem Render Proxy
+- Added kind, extentHints information in the Golaem For USD plugin
+- New glmMaterialAssignMode attribute in the Golaem For USD plugin
+
+
+** Bug fixes
+
+- Fixed Golaem Bbox display normals in the Golaem For USD plugin
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.23.11 / For MayaUSD 0.23.0 - 0.27.0 / For Houdini 19.5 and 20.0 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 9.0.2 - CHANGELOG - April 30th 2024
+--------------------------------------------------
+
+** Refactoring
+
+- Fixed USD plugin build without Tracy
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.23.11 / For MayaUSD 0.23.0 - 0.27.0 / For Houdini 19.5 and 20.0 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 9.0.1 - CHANGELOG - March 6th 2024
+-------------------------------------------------
+
+** Improvements
+
+- Added support for Arnold renderer attributes when baking Simulation Caches in UsdProc
+
+
+** Refactoring
+
+- Added support for USD 0.23.11
+- Removed support for USD 0.23.08
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.23.11 / For MayaUSD 0.23.0 - 0.27.0 / For Houdini 19.5 and 20.0 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 8.2.7 - CHANGELOG - February 13th 2024
+-----------------------------------------------------
+
+** Bug fixes
+
+- Fixed fps support in the Golaem For USD procedural plugin
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 and 0.20.02 / For Houdini 19 and 19.5 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 8.2.5 - CHANGELOG - September 25th 2023
+------------------------------------------------------
+
+** Bug fixes
+
+- Fixed a multithreading bug when using motion blur in the Golaem For USD plugin
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 and 0.20.02 / For Houdini 18 and 18.5 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 8.2.4 - CHANGELOG - June 27th 2023
+-------------------------------------------------
+
+** Refactoring
+
+- Shader Attributes are now declared in the primVars namespace when exported as USD Procedural
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 and 0.20.02 / For Houdini 18 and 18.5 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 8.2.3 - CHANGELOG - April 12th 2023
+--------------------------------------------------
+
+** Improvements
+
+- Added LOD support in the USD Procedural plugin
+- Improved memory usage when using the USD Procedural plugin
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 and 0.20.02 / For Houdini 18 and 18.5 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 8.2.1 - CHANGELOG - November 28th 2022
+-----------------------------------------------------
+
+** Improvements
+
+- The Mesh Alias defined in a Character File are now used when naming meshes in the Golaem For USD plugin
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 and 0.20.02 / For Houdini 18 and 18.5 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 8.1.4 - CHANGELOG - July 5th 2022
+------------------------------------------------
+
+** Improvements
+
+- Added skeleton display mode in the Golaem For USD Procedural plugin
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 and 0.20.02 / For Houdini 18 and 18.5 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 8.1 - CHANGELOG - January 24th 2022
+--------------------------------------------------
+
+** Refactoring
+
+- USD Procedural file export is now available from the Simulation Baker tool
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 and 0.20.02 / For Houdini 18 and 18.5 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 7.3.8 - CHANGELOG - January 22nd 2021
+----------------------------------------------------
+
+** Refactoring
+
+- The Python Boost library is now installed within the Golaem USD plugin for Windows
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 and 0.20.02 / For Houdini 18 and 18.5 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 7.3.7 - CHANGELOG - December 3rd 2020
+----------------------------------------------------
+
+** Bug fixes
+
+- Fixed Entities not showing out of initial simulation time range in the USD Proc plugin
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 and 0.20.02 / For Houdini 18 and 18.5 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 7.3.4 - CHANGELOG - July 28th 2020
+-------------------------------------------------
+
+** API
+
+- USD libraries are now prefixed to avoid dependency collisions
+
+
+** Supported Rendering Engines
+
+- USD - Standalone 0.19.11 / For Houdini 18 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 7.3.1 - CHANGELOG - April 7th 2020
+-------------------------------------------------
+
+** Bug fixes
+
+- Fixed USD file export when using namespaces
+
+
+** Supported Rendering Engines
+
+- USD (beta) - Standalone 0.19.11 / For Houdini 18 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 7.3 - CHANGELOG - March 9th 2020
+-----------------------------------------------
+
+** New features
+
+- Source code of the Golaem For USD Plugin is now published under LGPL v2.1
+
+
+** Improvements
+
+- Added support for USD for Katana 3.5
+
+
+** Supported Rendering Engines
+
+- USD (beta) - Standalone 0.19.11 / For Houdini 18 / For Katana 3.5
+
+
+
+
+GOLAEM FOR USD 7.2.2 - CHANGELOG - February 10th 2020
+-----------------------------------------------------
+
+** Improvements
+
+- Added Golaem and PPAttr in the transform of each Entity in the USD Plugin
+- Added namespace and PPAttr (glmAttributeNamespace) in the USD Plugin
+- Added support for USD for Houdini 18
+
+
+** Bug fixes
+
+- Fixed dirmap attribute in the USD exporter
+
+
+** Supported Rendering Engines
+
+- USD (beta) - Standalone 0.19.11 / For Houdini 18
+
+
+
+
+GOLAEM FOR USD 7.2.1 - CHANGELOG - January 15th 2020
+----------------------------------------------------
+
+** New features
+
+- New Golaem procedural plugin for USD 0.19.11 (beta)
+
+
+** Improvements
+
+- Added USD exporter in the Crowd Render Proxy
+
+
+
+
 GOLAEM 7.2.3 - CHANGELOG - February 28th 2020
 ---------------------------------------------
 

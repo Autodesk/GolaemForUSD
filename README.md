@@ -2,8 +2,9 @@
 
 ![Screenshot](usdCapture.jpg)
 
-Golaem For USD is a plugin which takes advantage of USD Dynamic Payloads to render Golaem Simulation Caches within USD compatible applications.
-Thus, it avoids baking out geometry, handles geometry and shading variation and Golaem Layout edits.
+Golaem For USD provides a USD file format for Golaem simulation caches (`.glmusd`) that uses USD Dynamic Payloads, as well as a Hydra generative procedural plugin. It renders Golaem characters without baking their geometry into USD, while preserving geometry and shading variation and Golaem layout edits.
+
+The Hydra procedural is available when building against USD 0.25.06 or newer. See [HYDRA.md](HYDRA.md) for its format and supported attributes.
 
 ## License
 Golaem For USD is licensed under Apache 2.0
@@ -14,22 +15,32 @@ See [license file](LICENSE.md)
 You can find more information about how to contribute to this project [here](CONTRIBUTING.md)
 
 ## Prerequisites
-- [Golaem 7.2.3 For Maya (or above)](http://download.golaem.com)
-- USD 0.19.11
-- FBX SDK 2019.0
-> Please use the same version of Golaem For Maya as the Golaem For USD tag you're compiling
+- CMake 3.25 or newer.
+- A Golaem For Maya Devkit matching the Golaem For USD version being built.
+- A compatible USD distribution and toolchain. See [CHANGELOG](CHANGELOG) for the supported USD and host application versions for each release.
+- Autodesk FBX SDK for standalone USD builds. CMake defaults to FBX SDK 2020.3.9; use a version and platform build compatible with your Golaem Devkit and USD distribution.
 
 ## Documentation
 Official documentation for the plugin can be found here: [http://usd.golaem.com](http://usd.golaem.com)
 
 ## Compilation
-1. Use CMake 3.13 (or above) and set the GOLAEMUSD_STANDALONE_BUILD to True
-2. Locate the Golaem For Maya Devkit, USD build and FBX SDK Directories
-3. Configure and Generate your solution
-4. Open the generated solution with your favorite IDE 
+For a standalone USD build, configure CMake with the paths to your externals and Golaem Devkit. The USD and FBX SDK packages must match your platform and toolchain:
+
+```sh
+cmake -S . -B build \
+  -DGOLAEMUSD_STANDALONE_BUILD=ON \
+  -DGLM_EXTERNALS_HOME=/path/to/externals \
+  -DGOLAEMDEVKIT_ROOTDIR=/path/to/golaem-devkit \
+  -DUSD_VERSION=0.25.11-glm-onetbb2021.12 \
+  -DFBXSDK_VERSION=2020.3.9
+cmake --build build --config Release
+cmake --install build --config Release
+```
+
+`GOLAEMUSD_STANDALONE_BUILD` is enabled by default. The example variables configure the external packages and Golaem Devkit used by the standalone build.
 
 ## Changelog
-Changelog for the plugin can be found here: [ChangeLog](CHANGELOG)
+Changelog for the plugin can be found here: [CHANGELOG](CHANGELOG)
 
 ## Code of Conduct
 
