@@ -1287,11 +1287,15 @@ namespace glm
             const glm::Array<glm::PODArray<int>>& entityAssets =
                 cachedSimulation.getFinalEntityAssets(frame);
 
+            const glm::Array<glm::PODArray<int>>& entityDeformationOverrides =
+                cachedSimulation.getFinalDeformationOverrideAssociations(frame);
+
             glm::crowdio::InputEntityGeoData inputData;
             inputData._simuData = simData;
             inputData._characterIdx = characterIndex;
             inputData._character = character;
             inputData._assets = &entityAssets[entityIndex];
+            inputData._deformationOverrides = ((size_t)entityIndex < entityDeformationOverrides.size()) ? &entityDeformationOverrides[entityIndex] : NULL;
             inputData._entityIndex = entityIndex;
             inputData._entityToBakeIndex = simData->_entityToBakeIndex[entityIndex];
             inputData._entityId = simData->_entityIds[entityIndex];
