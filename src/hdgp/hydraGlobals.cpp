@@ -2,11 +2,13 @@
 
 #if PXR_VERSION > 2505
 
+USD_INCLUDES_START
 #include <pxr/imaging/hd/materialBindingsSchema.h>
 #include <pxr/imaging/hd/primvarSchema.h>
 #include <pxr/imaging/hd/retainedDataSource.h>
 #include <pxr/imaging/hd/xformSchema.h>
 #include <pxr/base/gf/matrix4d.h>
+USD_INCLUDES_END
 
 PXR_NAMESPACE_USING_DIRECTIVE
 

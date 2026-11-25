@@ -5,6 +5,7 @@
 #include <glmCrowdFBXBaker.h>
 #include <glmCrowdFBXCharacter.h>
 
+USD_INCLUDES_START
 #include <pxr/imaging/hd/materialBindingsSchema.h>
 #include <pxr/imaging/hd/meshSchema.h>
 #include <pxr/imaging/hd/meshTopologySchema.h>
@@ -12,6 +13,7 @@
 #include <pxr/imaging/hd/primvarsSchema.h>
 #include <pxr/imaging/hd/xformSchema.h>
 #include <pxr/usd/usdGeom/tokens.h>
+USD_INCLUDES_END
 
 #include <fbxsdk.h>
 

@@ -2,12 +2,13 @@
 
 #if PXR_VERSION > 2505
 
+USD_INCLUDES_START
 #include <pxr/imaging/hd/meshSchema.h>
 #include <pxr/imaging/hd/meshTopologySchema.h>
 #include <pxr/imaging/hd/primvarSchema.h>
 #include <pxr/imaging/hd/primvarsSchema.h>
 #include <pxr/usd/usdGeom/tokens.h>
-
+USD_INCLUDES_END
 #include <cassert>
 
 PXR_NAMESPACE_USING_DIRECTIVE

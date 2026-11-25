@@ -2,6 +2,7 @@
 
 #if PXR_VERSION > 2505
 
+USD_INCLUDES_START
 #include <pxr/imaging/hd/basisCurvesSchema.h>
 #include <pxr/imaging/hd/basisCurvesTopologySchema.h>
 #include <pxr/imaging/hd/legacyDisplayStyleSchema.h>
@@ -12,6 +13,7 @@
 #include <pxr/imaging/hd/tokens.h>
 #include <pxr/imaging/hd/xformSchema.h>
 #include <pxr/usd/usdGeom/tokens.h>
+USD_INCLUDES_END
 
 #include <algorithm>
 #include <cmath>

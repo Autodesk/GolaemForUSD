@@ -193,6 +193,9 @@ if(GOLAEMUSD_STANDALONE_BUILD)
             Houdini # Standard Houdini libraries
             Houdini::Dep::pxr_ar
             Houdini::Dep::pxr_arch
+            Houdini::Dep::pxr_hd
+            Houdini::Dep::pxr_hdGp
+            Houdini::Dep::pxr_hf
             Houdini::Dep::pxr_gf
             Houdini::Dep::pxr_js
             Houdini::Dep::pxr_kind
@@ -312,6 +315,9 @@ else()
             Houdini # Standard Houdini libraries
             Houdini::Dep::pxr_ar
             Houdini::Dep::pxr_arch
+            Houdini::Dep::pxr_hd
+            Houdini::Dep::pxr_hdGp
+            Houdini::Dep::pxr_hf
             Houdini::Dep::pxr_gf
             Houdini::Dep::pxr_js
             Houdini::Dep::pxr_kind
