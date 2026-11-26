@@ -1,8 +1,16 @@
-/***************************************************************************
- *                                                                          *
- *  Copyright (C) Golaem S.A.  All Rights Reserved.                         *
- *                                                                          *
- ***************************************************************************/
+// Copyright 2026 Autodesk, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "glmUSDDataImpl.h"
 #include "glmUSDFileFormat.h"
@@ -2333,6 +2341,7 @@ namespace glm
 
                 // compute assets if needed
                 const glm::Array<glm::PODArray<int>>& entityAssets = cachedSimulation.getFinalEntityAssets(frameRange.first);
+                const glm::Array<glm::PODArray<int>>& entityDeformationOverrides = cachedSimulation.getFinalDeformationOverrideAssociations(frameRange.first);
 
                 // create lock for cached simulation
                 glm::Mutex* cachedSimulationLock = new glm::Mutex();
@@ -2475,6 +2484,7 @@ namespace glm
                     entityData->inputGeoData._characterIdx = characterIdx;
 
                     entityData->inputGeoData._assets = &entityAssets[entityData->inputGeoData._entityIndex];
+                    entityData->inputGeoData._deformationOverrides = (entityData->inputGeoData._entityIndex < entityDeformationOverrides.size()) ? &entityDeformationOverrides[entityData->inputGeoData._entityIndex] : NULL;
 
                     uint16_t entityType = simuData->_entityTypes[entityData->inputGeoData._entityIndex];
 
